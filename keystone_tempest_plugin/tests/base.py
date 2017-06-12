@@ -36,6 +36,9 @@ class BaseIdentityTest(test.BaseTestCase):
         cls.auth_client = cls.keystone_manager.auth_client
         cls.idps_client = cls.keystone_manager.identity_providers_client
         cls.mappings_client = cls.keystone_manager.mapping_rules_client
+        cls.roles_client = cls.keystone_manager.roles_v3_client
         cls.saml2_client = cls.keystone_manager.saml2_client
         cls.sps_client = cls.keystone_manager.service_providers_client
         cls.tokens_client = cls.keystone_manager.token_v3_client
+        cls.consumers_client = cls.keystone_manager.oauth_consumers_client
+        cls.oauth_token_client = cls.keystone_manager.oauth_token_client

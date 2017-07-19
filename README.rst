@@ -11,6 +11,6 @@ documentation`_.
 .. _`keystone developer documentation`: https://docs.openstack.org/developer/keystone/devref/development_best_practices.html#api-scenario-tests
 
 * Free software: Apache license
-* Documentation: http://docs.openstack.org/developer/openstack
+* Documentation: https://docs.openstack.org/keystone/latest/
 * Source: http://git.openstack.org/cgit/openstack/keystone-tempest-plugin
 * Bugs: http://bugs.launchpad.net/keystone_tempest_plugin

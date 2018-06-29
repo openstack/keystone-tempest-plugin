@@ -50,8 +50,14 @@ class TestSaml2EcpFederatedAuthentication(base.BaseIdentityTest):
 
     def _setup_idp(self):
         remote_ids = CONF.fed_scenario.idp_remote_ids
-        self.idps_client.create_identity_provider(
+        idp = self.idps_client.create_identity_provider(
             self.idp_id, remote_ids=remote_ids, enabled=True)
+        self.addCleanup(
+            self.keystone_manager.domains_client.delete_domain,
+            idp['identity_provider']['domain_id'])
+        self.addCleanup(
+            self.keystone_manager.domains_client.update_domain,
+            idp['identity_provider']['domain_id'], enabled=False)
         self.addCleanup(
             self.idps_client.delete_identity_provider, self.idp_id)
 

@@ -43,6 +43,13 @@ class IndentityProvidersTest(base.BaseIdentityTest):
     def _create_idp(self, idp_id, idp_ref):
         idp = self.idps_client.create_identity_provider(
             idp_id, **idp_ref)['identity_provider']
+        if not idp_ref.get('domain_id'):
+            self.addCleanup(
+                self.keystone_manager.domains_client.delete_domain,
+                idp['domain_id'])
+            self.addCleanup(
+                self.keystone_manager.domains_client.update_domain,
+                idp['domain_id'], enabled=False)
         self.addCleanup(
             self.idps_client.delete_identity_provider, idp_id)
         return idp

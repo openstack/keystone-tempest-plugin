@@ -44,8 +44,8 @@ class Saml2Client(object):
             headers=self.ECP_SP_EMPTY_REQUEST_HEADERS
         )
 
-    def _prepare_sp_saml2_authn_response(self, saml2_idp_authn_response,
-                                         relay_state):
+    def prepare_sp_saml2_authn_response(self, saml2_idp_authn_response,
+                                        relay_state):
         # Replace the header contents of the Identity Provider response with
         # the relay state initially sent by the Service Provider. The response
         # is a SOAP envelope with the following structure:
@@ -72,10 +72,7 @@ class Saml2Client(object):
         )
 
     def send_service_provider_saml2_authn_response(
-            self, saml2_idp_authn_response, relay_state, idp_consumer_url):
-
-        self._prepare_sp_saml2_authn_response(
-            saml2_idp_authn_response, relay_state)
+            self, saml2_idp_authn_response, idp_consumer_url):
 
         return self.session.post(
             idp_consumer_url,

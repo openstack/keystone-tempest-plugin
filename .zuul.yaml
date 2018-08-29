@@ -1,0 +1,12 @@
+- project:
+    templates:
+      - check-requirements
+      - tempest-plugin-jobs
+    check:
+      jobs:
+        - legacy-keystone-dsvm-functional
+        - legacy-keystone-dsvm-functional-v3-only:
+            voting: false
+    gate:
+      jobs:
+        - legacy-keystone-dsvm-functional

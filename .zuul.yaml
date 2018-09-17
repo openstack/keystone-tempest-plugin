@@ -4,9 +4,9 @@
       - tempest-plugin-jobs
     check:
       jobs:
-        - legacy-keystone-dsvm-functional
-        - legacy-keystone-dsvm-functional-v3-only:
+        - keystone-dsvm-functional
+        - keystone-dsvm-functional-federation:
             voting: false
     gate:
       jobs:
-        - legacy-keystone-dsvm-functional
+        - keystone-dsvm-functional

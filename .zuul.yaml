@@ -7,6 +7,8 @@
         - keystone-dsvm-functional
         - keystone-dsvm-functional-federation:
             voting: false
+        - keystone-dsvm-py35-functional-federation:
+            voting: false
     gate:
       jobs:
         - keystone-dsvm-functional

@@ -5,6 +5,7 @@
     check:
       jobs:
         - keystone-dsvm-functional
+        - keystone-dsvm-py3-functional
         - keystone-dsvm-functional-federation:
             voting: false
         - keystone-dsvm-py35-functional-federation:
@@ -12,3 +13,4 @@
     gate:
       jobs:
         - keystone-dsvm-functional
+        - keystone-dsvm-py3-functional

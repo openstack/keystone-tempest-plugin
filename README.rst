@@ -1,6 +1,6 @@
-===============================
-openstack
-===============================
+=======================
+keystone-tempest-plugin
+=======================
 
 Tempest plugin keystone_tempest_plugin
 
@@ -12,5 +12,5 @@ documentation`_.
 
 * Free software: Apache license
 * Documentation: https://docs.openstack.org/keystone/latest/
-* Source: http://git.openstack.org/cgit/openstack/keystone-tempest-plugin
+* Source: http://opendev.org/openstack/keystone-tempest-plugin
 * Bugs: http://bugs.launchpad.net/keystone_tempest_plugin

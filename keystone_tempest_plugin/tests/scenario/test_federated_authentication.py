@@ -183,14 +183,10 @@ class TestSaml2EcpFederatedAuthentication(base.BaseIdentityTest):
 
         return resp
 
-    @testtools.skipUnless(CONF.identity_feature_enabled.federation,
-                          "Federated Identity feature not enabled")
-    def test_request_unscoped_token(self):
+    def _test_request_unscoped_token(self):
         self._request_unscoped_token()
 
-    @testtools.skipUnless(CONF.identity_feature_enabled.federation,
-                          "Federated Identity feature not enabled")
-    def test_request_scoped_token(self):
+    def _test_request_scoped_token(self):
         resp = self._request_unscoped_token()
         token_id = resp.headers['X-Subject-Token']
 
@@ -201,6 +197,24 @@ class TestSaml2EcpFederatedAuthentication(base.BaseIdentityTest):
         # Get a scoped token to one of the listed projects
         self.tokens_client.auth(
             project_id=projects[0]['id'], token=token_id)
+
+
+class TestSaml2FederatedExternalAuthentication(
+    TestSaml2EcpFederatedAuthentication):
+
+    @testtools.skipUnless(CONF.identity_feature_enabled.federation,
+                          "Federated Identity feature not enabled")
+    @testtools.skipUnless(CONF.identity_feature_enabled.external_idp,
+                          "External identity provider is not available")
+    def test_request_unscoped_token(self):
+        self._test_request_unscoped_token()
+
+    @testtools.skipUnless(CONF.identity_feature_enabled.federation,
+                          "Federated Identity feature not enabled")
+    @testtools.skipUnless(CONF.identity_feature_enabled.external_idp,
+                          "External identity provider is not available")
+    def test_request_scoped_token(self):
+        self._test_request_scoped_token()
 
 
 class TestK2KFederatedAuthentication(TestSaml2EcpFederatedAuthentication):
@@ -253,3 +267,13 @@ class TestK2KFederatedAuthentication(TestSaml2EcpFederatedAuthentication):
         self.auth_client.expected_success(200, resp.status)
 
         return etree.XML(saml), self.sp_url
+
+    @testtools.skipUnless(CONF.identity_feature_enabled.federation,
+                          "Federated Identity feature not enabled")
+    def test_request_unscoped_token(self):
+        self._test_request_unscoped_token()
+
+    @testtools.skipUnless(CONF.identity_feature_enabled.federation,
+                          "Federated Identity feature not enabled")
+    def test_request_scoped_token(self):
+        self._test_request_scoped_token()

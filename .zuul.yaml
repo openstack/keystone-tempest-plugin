@@ -6,9 +6,9 @@
       jobs:
         - keystone-dsvm-functional
         - keystone-dsvm-py3-functional
-        - keystone-dsvm-functional-federation:
+        - keystone-dsvm-functional-federation-opensuse15:
             voting: false
-        - keystone-dsvm-py35-functional-federation:
+        - keystone-dsvm-py3-functional-federation-opensuse15:
             voting: false
     gate:
       jobs:

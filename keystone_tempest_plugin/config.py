@@ -20,6 +20,11 @@ identity_feature_option = [
                 default=False,
                 help='Does the environment support the Federated Identity '
                      'feature?'),
+    cfg.BoolOpt('external_idp',
+                default=True,
+                help='Whether to test federated scenarios against an external '
+                     'identity provider. If disabled, only '
+                     'Keystone-to-Keystone tests will be enabled.'),
 ]
 
 fed_scenario_group = cfg.OptGroup(name='fed_scenario',

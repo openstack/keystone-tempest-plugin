@@ -4,7 +4,6 @@
       - tempest-plugin-jobs
     check:
       jobs:
-        - keystone-dsvm-functional
         - keystone-dsvm-py3-functional
         - keystone-dsvm-functional-federation-opensuse15:
             voting: false
@@ -12,5 +11,4 @@
             voting: false
     gate:
       jobs:
-        - keystone-dsvm-functional
         - keystone-dsvm-py3-functional

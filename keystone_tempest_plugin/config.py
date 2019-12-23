@@ -15,7 +15,7 @@
 
 from oslo_config import cfg
 
-identity_feature_option = [
+identity_feature_options = [
     cfg.BoolOpt('federation',
                 default=False,
                 help='Does the environment support the Federated Identity '
@@ -25,6 +25,10 @@ identity_feature_option = [
                 help='Whether to test federated scenarios against an external '
                      'identity provider. If disabled, only '
                      'Keystone-to-Keystone tests will be enabled.'),
+    cfg.BoolOpt('enforce_scope',
+                default=False,
+                help='Does the keystone service enforce scope and use '
+                     'scope-aware policies?'),
 ]
 
 fed_scenario_group = cfg.OptGroup(name='fed_scenario',

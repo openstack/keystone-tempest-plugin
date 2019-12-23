@@ -32,12 +32,12 @@ class KeystoneTempestPlugin(plugins.TempestPlugin):
 
     def register_opts(self, conf):
         config.register_opt_group(conf, config.identity_feature_group,
-                                  project_config.identity_feature_option)
+                                  project_config.identity_feature_options)
         config.register_opt_group(conf, project_config.fed_scenario_group,
                                   project_config.FedScenarioGroup)
 
     def get_opt_lists(self):
         return [(config.identity_feature_group.name,
-                 project_config.identity_feature_option),
+                 project_config.identity_feature_options),
                 (project_config.fed_scenario_group.name,
                  project_config.FedScenarioGroup)]

@@ -1,3 +1,39 @@
+- job:
+    name: keystone-protection-functional
+    parent: keystone-dsvm-py3-functional
+    vars:
+      tempest_test_regex: 'keystone_tempest_plugin.tests.rbac'
+      devstack_localrc:
+        KEYSTONE_ENFORCE_SCOPE: True
+      devstack_plugins:
+        keystone: https://opendev.org/openstack/keystone
+      devstack_services:
+        g-api: false
+        g-reg: false
+        n-api: false
+        n-api-meta: false
+        n-cond: false
+        n-cpu: false
+        n-novnc: false
+        n-sch: false
+        placement-api: false
+        q-agt: false
+        q-dhcp: false
+        q-l3: false
+        q-meta: false
+        q-metering: false
+        s-account: false
+        s-container: false
+        s-object: false
+        s-proxy: false
+        c-api: false
+        c-bak: false
+        c-sch: false
+        c-vol: false
+        cinder: false
+      devstack_local_conf:
+        post-config: {}
+
 - project:
     templates:
       - check-requirements
@@ -11,10 +47,12 @@
         - keystone-dsvm-py3-functional-ussuri
         - keystone-dsvm-py3-functional-train
         - keystone-dsvm-py3-functional-stein
+        - keystone-protection-functional
     gate:
       jobs:
         - keystone-dsvm-py3-functional
         - keystone-dsvm-py3-functional-federation-ubuntu-focal-k2k
+        - keystone-protection-functional
 
 - job:
     name: keystone-dsvm-py3-functional-ussuri

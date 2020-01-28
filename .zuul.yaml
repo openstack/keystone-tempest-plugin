@@ -5,10 +5,10 @@
     check:
       jobs:
         - keystone-dsvm-py3-functional
-        - keystone-dsvm-functional-federation-opensuse15:
-            voting: false
         - keystone-dsvm-py3-functional-federation-opensuse15:
             voting: false
+        - keystone-dsvm-py3-functional-federation-opensuse15-k2k
     gate:
       jobs:
         - keystone-dsvm-py3-functional
+        - keystone-dsvm-py3-functional-federation-opensuse15-k2k

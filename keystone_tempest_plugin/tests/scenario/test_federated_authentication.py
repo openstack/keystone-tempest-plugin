@@ -12,13 +12,13 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import http.client
 import json
 from lxml import etree
-from six.moves import http_client
-from six.moves import urllib
 from tempest import config
 from tempest.lib.common.utils import data_utils
 import testtools
+import urllib
 
 from keystone_tempest_plugin.tests import base
 
@@ -126,7 +126,7 @@ class TestSaml2EcpFederatedAuthentication(base.BaseIdentityTest):
     def _get_sp_authn_request(self):
         resp = self.saml2_client.send_service_provider_request(
             self.keystone_v3_endpoint, self.idp_id, self.protocol_id)
-        self.assertEqual(http_client.OK, resp.status_code)
+        self.assertEqual(http.client.OK, resp.status_code)
         saml2_authn_request = etree.XML(resp.content)
 
         relay_state = self._str_from_xml(
@@ -137,7 +137,7 @@ class TestSaml2EcpFederatedAuthentication(base.BaseIdentityTest):
         # Perform the authn request to the identity provider
         resp = self.saml2_client.send_identity_provider_authn_request(
             saml2_authn_request, self.idp_url, self.username, self.password)
-        self.assertEqual(http_client.OK, resp.status_code)
+        self.assertEqual(http.client.OK, resp.status_code)
         saml2_idp_authn_response = etree.XML(resp.content)
 
         idp_consumer_url = self._str_from_xml(
@@ -161,7 +161,7 @@ class TestSaml2EcpFederatedAuthentication(base.BaseIdentityTest):
         # Must receive a redirect from service provider to the URL where the
         # unscoped token can be retrieved.
         self.assertIn(resp.status_code,
-                      [http_client.FOUND, http_client.SEE_OTHER])
+                      [http.client.FOUND, http.client.SEE_OTHER])
 
         # If this is K2K, don't follow HTTP specs - after the HTTP 302/303
         # response don't repeat the call directed to the Location URL. In this
@@ -177,7 +177,7 @@ class TestSaml2EcpFederatedAuthentication(base.BaseIdentityTest):
         resp = (
             self.saml2_client.send_service_provider_unscoped_token_request(
                 sp_url))
-        self.assertEqual(http_client.CREATED, resp.status_code)
+        self.assertEqual(http.client.CREATED, resp.status_code)
         self.assertIn('X-Subject-Token', resp.headers)
         self.assertNotEmpty(resp.json())
 

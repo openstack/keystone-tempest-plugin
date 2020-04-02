@@ -119,9 +119,9 @@ class TestSaml2EcpFederatedAuthentication(base.BaseIdentityTest):
         self._setup_protocol()
 
     def _str_from_xml(self, xml, path):
-        l = xml.xpath(path, namespaces=self.ECP_SAML2_NAMESPACES)
-        self.assertEqual(1, len(l))
-        return l[0]
+        item = xml.xpath(path, namespaces=self.ECP_SAML2_NAMESPACES)
+        self.assertEqual(1, len(item))
+        return item[0]
 
     def _get_sp_authn_request(self):
         resp = self.saml2_client.send_service_provider_request(

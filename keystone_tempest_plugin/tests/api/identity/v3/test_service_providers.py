@@ -194,13 +194,18 @@ class ServiceProvidersTest(base.BaseIdentityTest):
             enabled_sps.append(sp_id)
 
         # Create some disabled service providers
+        disabled_sps = []
         for _ in range(2):
             sp_id = data_utils.rand_uuid_hex()
             self._create_sp(sp_id, fixtures.sp_ref(enabled=False))
+            disabled_sps.append(sp_id)
 
         sps_in_token_ids = [
             sp['id'] for sp in
             self.sps_client.get_service_providers_in_token()]
 
-        # Should be equal to the enabled_sps list
-        self.assertItemsEqual(enabled_sps, sps_in_token_ids)
+        for enabled_sp in enabled_sps:
+            self.assertIn(enabled_sp, sps_in_token_ids)
+
+        for disabled_sp in disabled_sps:
+            self.assertNotIn(disabled_sp, sps_in_token_ids)

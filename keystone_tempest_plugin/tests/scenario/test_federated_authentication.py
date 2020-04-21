@@ -222,6 +222,26 @@ class TestK2KFederatedAuthentication(TestSaml2EcpFederatedAuthentication):
     def setUp(self):
         super(TestK2KFederatedAuthentication, self).setUp()
         self._setup_sp()
+        user_id = self.keystone_manager.identity_providers_client.user_id
+        idp_info = self.idps_client.show_identity_provider(self.idp_id)
+        domain_id = idp_info['identity_provider']['domain_id']
+        project_id = self.keystone_manager.identity_providers_client.tenant_id
+        group = self.keystone_manager.groups_client.create_group(
+            name=data_utils.rand_uuid_hex(), domain_id=domain_id)
+        role = self.keystone_manager.roles_v3_client.create_role(
+            name=data_utils.rand_uuid_hex(), project_id=project_id)
+
+        self.keystone_manager.roles_v3_client.create_group_role_on_project(
+            group_id=group['group']['id'], project_id=project_id,
+            role_id=role['role']['id'])
+        self.keystone_manager.groups_client.add_group_user(
+            group_id=group['group']['id'], user_id=user_id)
+        self.addCleanup(
+            self.keystone_manager.groups_client.delete_group,
+            group['group']['id'])
+        self.addCleanup(
+            self.keystone_manager.roles_v3_client.delete_role,
+            role['role']['id'])
 
     def _setup_settings(self):
         super(TestK2KFederatedAuthentication, self)._setup_settings()
@@ -238,6 +258,31 @@ class TestK2KFederatedAuthentication(TestSaml2EcpFederatedAuthentication):
         url = urllib.parse.urlparse(self.keystone_v3_endpoint)
         self.sp_url = '%s://%s/Shibboleth.sso/SAML2/ECP' % (url.scheme,
                                                             url.netloc)
+
+    def _setup_mapping(self):
+        self.mapping_id = data_utils.rand_uuid_hex()
+        rules = [{
+            'local': [
+                {
+                    'user': {'name': self.mapping_user_name}
+                },
+                {
+                    'groups': '{1}'
+                }
+            ],
+            'remote': [
+                {
+                    'type': self.mapping_remote_type
+                },
+                {
+                    "type": 'openstack_groups'
+                }
+            ]
+        }]
+        mapping_ref = {'rules': rules}
+        self.mappings_client.create_mapping_rule(self.mapping_id, mapping_ref)
+        self.addCleanup(
+            self.mappings_client.delete_mapping_rule, self.mapping_id)
 
     def _setup_sp(self):
         self.sps_client.create_service_provider(self.sp_id,

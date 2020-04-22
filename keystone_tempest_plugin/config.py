@@ -58,6 +58,12 @@ FedScenarioGroup = [
                default='federated_domain',
                help='The domain name where the "mapping_group_name" is '
                     'created.'),
+    # TODO(cmurphy): remove this option and set to true when all supported
+    # branches support the openstack_groups feature
+    cfg.BoolOpt('enable_k2k_groups_mapping',
+                default=False,
+                help='Whether to test support for openstack_groups in the K2K '
+                     'SAML assertion (lp#1687593)'),
 
     # Protocol
     cfg.StrOpt('protocol_id',

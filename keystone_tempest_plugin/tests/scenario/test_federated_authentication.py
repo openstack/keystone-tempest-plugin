@@ -260,6 +260,9 @@ class TestK2KFederatedAuthentication(TestSaml2EcpFederatedAuthentication):
                                                             url.netloc)
 
     def _setup_mapping(self):
+        if not CONF.fed_scenario.enable_k2k_groups_mapping:
+            super(TestK2KFederatedAuthentication, self)._setup_mapping()
+            return
         self.mapping_id = data_utils.rand_uuid_hex()
         rules = [{
             'local': [

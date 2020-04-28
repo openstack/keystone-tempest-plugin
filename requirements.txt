@@ -9,5 +9,4 @@ lxml!=3.7.0,>=3.4.1 # BSD
 tempest>=17.1.0 # Apache-2.0
 oslo.config>=5.2.0 # Apache-2.0
 testtools>=2.2.0 # MIT
-six>=1.10.0 # MIT
 requests>=2.14.2 # Apache-2.0

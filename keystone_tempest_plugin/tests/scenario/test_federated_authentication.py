@@ -228,20 +228,19 @@ class TestK2KFederatedAuthentication(TestSaml2EcpFederatedAuthentication):
         project_id = self.keystone_manager.identity_providers_client.tenant_id
         group = self.keystone_manager.groups_client.create_group(
             name=data_utils.rand_uuid_hex(), domain_id=domain_id)
+        self.addCleanup(
+            self.keystone_manager.groups_client.delete_group,
+            group['group']['id'])
         role = self.keystone_manager.roles_v3_client.create_role(
             name=data_utils.rand_uuid_hex(), project_id=project_id)
-
+        self.addCleanup(
+            self.keystone_manager.roles_v3_client.delete_role,
+            role['role']['id'])
         self.keystone_manager.roles_v3_client.create_group_role_on_project(
             group_id=group['group']['id'], project_id=project_id,
             role_id=role['role']['id'])
         self.keystone_manager.groups_client.add_group_user(
             group_id=group['group']['id'], user_id=user_id)
-        self.addCleanup(
-            self.keystone_manager.groups_client.delete_group,
-            group['group']['id'])
-        self.addCleanup(
-            self.keystone_manager.roles_v3_client.delete_role,
-            role['role']['id'])
 
     def _setup_settings(self):
         super(TestK2KFederatedAuthentication, self)._setup_settings()

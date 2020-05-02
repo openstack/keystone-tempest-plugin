@@ -48,10 +48,6 @@ class ServiceProvidersTest(base.BaseIdentityTest):
                 self.assertEqual(
                     sp_ref['relay_state_prefix'], sp['relay_state_prefix'])
 
-    def _add_cleanup(self, sp_id):
-        self.addCleanup(
-            self.sps_client.delete_service_provider, sp_id)
-
     def _create_sp(self, sp_id, sp_ref):
         sp = self.sps_client.create_service_provider(
             sp_id, **sp_ref)['service_provider']

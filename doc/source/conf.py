@@ -75,6 +75,6 @@ latex_documents = [
 #intersphinx_mapping = {'http://docs.python.org/': None}
 
 # openstackdocstheme options
-repository_name = 'openstack/keystone-tempest-plugin'
-bug_project = 'keystone'
-bug_tag = 'docs'
+openstackdocs_repo_name = 'openstack/keystone-tempest-plugin'
+openstackdocs_bug_project = 'keystone'
+openstackdocs_bug_tag = 'docs'

@@ -222,10 +222,17 @@ class TestK2KFederatedAuthentication(TestSaml2EcpFederatedAuthentication):
     def setUp(self):
         super(TestK2KFederatedAuthentication, self).setUp()
         self._setup_sp()
-        user_id = self.keystone_manager.identity_providers_client.user_id
+        self.auth = {'password': data_utils.rand_password()}
+        user_id = self.keystone_manager.users_v3_client.create_user(
+            name=data_utils.rand_name('user'),
+            password=self.auth['password'])['user']['id']
+        self.addCleanup(
+            self.keystone_manager.users_v3_client.delete_user, user_id)
+        self.auth['user_id'] = user_id
         idp_info = self.idps_client.show_identity_provider(self.idp_id)
         domain_id = idp_info['identity_provider']['domain_id']
         project_id = self.keystone_manager.identity_providers_client.tenant_id
+        self.auth['project_id'] = project_id
         group = self.keystone_manager.groups_client.create_group(
             name=data_utils.rand_uuid_hex(), domain_id=domain_id)
         role = self.keystone_manager.roles_v3_client.create_role(
@@ -295,12 +302,16 @@ class TestK2KFederatedAuthentication(TestSaml2EcpFederatedAuthentication):
         self.addCleanup(self.sps_client.delete_service_provider, self.sp_id)
 
     def _get_sp_authn_request(self):
+        token = self.tokens_client.get_token(
+            user_id=self.auth['user_id'],
+            password=self.auth['password'],
+            project_id=self.auth['project_id'])
         body = {
             'auth': {
                 'identity': {
                     'methods': ['token'],
                     'token': {
-                        'id': self.auth_client.token
+                        'id': token
                     }
                 },
                 'scope': {

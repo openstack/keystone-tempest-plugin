@@ -219,7 +219,7 @@ class OAUTH1TokensTest(base.BaseIdentityTest):
         role_ids = [role['id'] for role in roles['roles']]
 
         # check that role ids matches
-        self.assertItemsEqual(fetched_role_ids, role_ids)
+        self.assertCountEqual(fetched_role_ids, role_ids)
 
     @decorators.idempotent_id('28aee994-86b1-4596-a652-572f558045e7')
     def test_show_role_for_access_token(self):

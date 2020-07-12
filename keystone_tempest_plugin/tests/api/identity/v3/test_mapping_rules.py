@@ -32,7 +32,7 @@ class MappingRulesTest(base.BaseIdentityTest):
         self.assertIn('rules', mapping)
 
         if mapping_ref:
-            self.assertItemsEqual(mapping_ref['rules'], mapping['rules'])
+            self.assertCountEqual(mapping_ref['rules'], mapping['rules'])
 
     def _create_mapping_rule(self, mapping_id, mapping_ref):
         mapping = self.mappings_client.create_mapping_rule(

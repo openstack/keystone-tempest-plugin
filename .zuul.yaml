@@ -19,14 +19,17 @@
 - job:
     name: keystone-dsvm-py3-functional-ussuri
     parent: keystone-dsvm-py3-functional
+    nodeset: openstack-single-node-bionic
     override-checkout: stable/ussuri
 
 - job:
     name: keystone-dsvm-py3-functional-train
     parent: keystone-dsvm-py3-functional
+    nodeset: openstack-single-node-bionic
     override-checkout: stable/train
 
 - job:
     name: keystone-dsvm-py3-functional-stein
     parent: keystone-dsvm-py3-functional
+    nodeset: openstack-single-node-bionic
     override-checkout: stable/stein

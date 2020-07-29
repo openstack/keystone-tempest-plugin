@@ -42,3 +42,6 @@ class BaseIdentityTest(test.BaseTestCase):
         cls.tokens_client = cls.keystone_manager.token_v3_client
         cls.consumers_client = cls.keystone_manager.oauth_consumers_client
         cls.oauth_token_client = cls.keystone_manager.oauth_token_client
+        cls.registered_limits_client = (
+            cls.keystone_manager.registered_limits_client)
+        cls.limits_client = cls.keystone_manager.limits_client

@@ -19,6 +19,7 @@ from keystone_tempest_plugin.services.identity.v3 import (
 from keystone_tempest_plugin.services.identity.v3 import (
     service_providers_client)
 from keystone_tempest_plugin.services.identity.v3 import auth_client
+from keystone_tempest_plugin.services.identity.v3 import limits_client
 from keystone_tempest_plugin.services.identity.v3 import saml2_client
 
 from tempest import clients
@@ -29,7 +30,10 @@ class Manager(clients.Manager):
     def __init__(self, credentials):
         super(Manager, self).__init__(credentials)
 
+        # keystone auth client
         self.auth_client = auth_client.AuthClient(self.auth_provider)
+
+        # federation clients
         self.identity_providers_client = (
             identity_providers_client.IdentityProvidersClient(
                 self.auth_provider))
@@ -40,3 +44,8 @@ class Manager(clients.Manager):
         self.service_providers_client = (
             service_providers_client.ServiceProvidersClient(
                 self.auth_provider))
+
+        # unified limits clients
+        self.registered_limits_client = limits_client.RegisteredLimitsClient(
+            self.auth_provider)
+        self.limits_client = limits_client.LimitsClient(self.auth_provider)

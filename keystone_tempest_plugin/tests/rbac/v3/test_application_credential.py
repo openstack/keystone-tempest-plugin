@@ -460,7 +460,9 @@ class ProjectAdminTests(IdentityV3RbacApplicationCredentialTest,
             user_id=user_id,
             application_credential_id=data_utils.rand_uuid_hex())
 
-        # user cannot retrieve another user's app cred
+        # user cannot retrieve another user's app cred by using the victim's
+        # user ID in the request or by trying to bypass the user ownership
+        # check by crafting a path the the attacker's user ID
         user_id = self.test_user_id
         client = self.test_user_client.application_credentials_client
         app_cred = client.create_application_credential(
@@ -468,6 +470,11 @@ class ProjectAdminTests(IdentityV3RbacApplicationCredentialTest,
         self.addCleanup(
             client.delete_application_credential,
             user_id=user_id, application_credential_id=app_cred['id'])
+        self.do_request(
+            'show_application_credential',
+            expected_status=exceptions.Forbidden,
+            user_id=self.persona.credentials.user_id,
+            application_credential_id=app_cred['id'])
         self.do_request(
             'show_application_credential',
             expected_status=exceptions.Forbidden,
@@ -520,7 +527,9 @@ class ProjectAdminTests(IdentityV3RbacApplicationCredentialTest,
             user_id=user_id,
             application_credential_id=data_utils.rand_uuid_hex())
 
-        # user cannot delete another user's app cred
+        # user cannot delete another user's app cred by using the victim's
+        # user ID in the request or by trying to bypass the user ownership
+        # check by crafting a path the the attacker's user ID
         user_id = self.test_user_id
         client = self.test_user_client.application_credentials_client
         app_cred = client.create_application_credential(
@@ -528,6 +537,11 @@ class ProjectAdminTests(IdentityV3RbacApplicationCredentialTest,
         self.addCleanup(
             client.delete_application_credential,
             user_id=user_id, application_credential_id=app_cred['id'])
+        self.do_request(
+            'delete_application_credential',
+            expected_status=exceptions.Forbidden,
+            user_id=self.persona.credentials.user_id,
+            application_credential_id=app_cred['id'])
         self.do_request(
             'delete_application_credential',
             expected_status=exceptions.Forbidden,

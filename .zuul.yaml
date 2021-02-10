@@ -5,16 +5,16 @@
     check:
       jobs:
         - keystone-dsvm-py3-functional
-        - keystone-dsvm-py3-functional-federation-opensuse15:
+        - keystone-dsvm-py3-functional-federation-ubuntu-focal:
             voting: false
-        - keystone-dsvm-py3-functional-federation-opensuse15-k2k
+        - keystone-dsvm-py3-functional-federation-ubuntu-focal-k2k
         - keystone-dsvm-py3-functional-ussuri
         - keystone-dsvm-py3-functional-train
         - keystone-dsvm-py3-functional-stein
     gate:
       jobs:
         - keystone-dsvm-py3-functional
-        - keystone-dsvm-py3-functional-federation-opensuse15-k2k
+        - keystone-dsvm-py3-functional-federation-ubuntu-focal-k2k
 
 - job:
     name: keystone-dsvm-py3-functional-ussuri

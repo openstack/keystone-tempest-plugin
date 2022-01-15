@@ -38,7 +38,7 @@ class IndentityProvidersTest(base.BaseIdentityTest):
                 self.assertEqual(idp_ref['enabled'], idp['enabled'])
 
             if 'remote_ids' in idp_ref:
-                self.assertItemsEqual(idp_ref['remote_ids'], idp['remote_ids'])
+                self.assertCountEqual(idp_ref['remote_ids'], idp['remote_ids'])
 
     def _create_idp(self, idp_id, idp_ref):
         idp = self.idps_client.create_identity_provider(

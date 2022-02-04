@@ -36,7 +36,7 @@ class Identity(rest_client.RestClient):
             auth_provider,
             SERVICE_TYPE,
             CONF.identity.region,
-            endpoint_type='adminURL')
+            endpoint_type=CONF.identity.v3_endpoint_type)
 
 
 class Federation(Identity):

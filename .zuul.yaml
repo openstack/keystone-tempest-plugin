@@ -44,10 +44,9 @@
         - keystone-dsvm-py3-functional-federation-ubuntu-focal:
             voting: false
         - keystone-dsvm-py3-functional-federation-ubuntu-focal-k2k
+        - keystone-dsvm-py3-functional-yoga
+        - keystone-dsvm-py3-functional-xena
         - keystone-dsvm-py3-functional-wallaby
-        - keystone-dsvm-py3-functional-victoria
-        - keystone-dsvm-py3-functional-ussuri
-        - keystone-dsvm-py3-functional-train
         - keystone-protection-functional
     gate:
       jobs:
@@ -56,23 +55,16 @@
         - keystone-protection-functional
 
 - job:
+    name: keystone-dsvm-py3-functional-yoga
+    parent: keystone-dsvm-py3-functional
+    override-checkout: stable/yoga
+
+- job:
+    name: keystone-dsvm-py3-functional-xena
+    parent: keystone-dsvm-py3-functional
+    override-checkout: stable/xena
+
+- job:
     name: keystone-dsvm-py3-functional-wallaby
     parent: keystone-dsvm-py3-functional
     override-checkout: stable/wallaby
-
-- job:
-    name: keystone-dsvm-py3-functional-victoria
-    parent: keystone-dsvm-py3-functional
-    override-checkout: stable/victoria
-
-- job:
-    name: keystone-dsvm-py3-functional-ussuri
-    parent: keystone-dsvm-py3-functional
-    nodeset: openstack-single-node-bionic
-    override-checkout: stable/ussuri
-
-- job:
-    name: keystone-dsvm-py3-functional-train
-    parent: keystone-dsvm-py3-functional
-    nodeset: openstack-single-node-bionic
-    override-checkout: stable/train

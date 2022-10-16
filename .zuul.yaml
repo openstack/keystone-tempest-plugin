@@ -63,9 +63,11 @@
 - job:
     name: keystone-dsvm-py3-functional-yoga
     parent: keystone-dsvm-py3-functional
+    nodeset: openstack-single-node-focal
     override-checkout: stable/yoga
 
 - job:
     name: keystone-dsvm-py3-functional-xena
     parent: keystone-dsvm-py3-functional
+    nodeset: openstack-single-node-focal
     override-checkout: stable/xena

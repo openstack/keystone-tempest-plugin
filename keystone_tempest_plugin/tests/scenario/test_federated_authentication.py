@@ -206,6 +206,8 @@ class TestSaml2FederatedExternalAuthentication(
                           "Federated Identity feature not enabled")
     @testtools.skipUnless(CONF.identity_feature_enabled.external_idp,
                           "External identity provider is not available")
+    @testtools.skipUnless(CONF.fed_scenario.protocol_id == 'mapped',
+                          "Protocol not mapped")
     def test_request_unscoped_token(self):
         self._test_request_unscoped_token()
 
@@ -213,6 +215,8 @@ class TestSaml2FederatedExternalAuthentication(
                           "Federated Identity feature not enabled")
     @testtools.skipUnless(CONF.identity_feature_enabled.external_idp,
                           "External identity provider is not available")
+    @testtools.skipUnless(CONF.fed_scenario.protocol_id == 'mapped',
+                          "Protocol not mapped")
     def test_request_scoped_token(self):
         self._test_request_scoped_token()
 
@@ -328,10 +332,14 @@ class TestK2KFederatedAuthentication(TestSaml2EcpFederatedAuthentication):
 
     @testtools.skipUnless(CONF.identity_feature_enabled.federation,
                           "Federated Identity feature not enabled")
+    @testtools.skipUnless(CONF.fed_scenario.protocol_id == 'mapped',
+                          "Protocol not mapped")
     def test_request_unscoped_token(self):
         self._test_request_unscoped_token()
 
     @testtools.skipUnless(CONF.identity_feature_enabled.federation,
                           "Federated Identity feature not enabled")
+    @testtools.skipUnless(CONF.fed_scenario.protocol_id == 'mapped',
+                          "Protocol not mapped")
     def test_request_scoped_token(self):
         self._test_request_scoped_token()

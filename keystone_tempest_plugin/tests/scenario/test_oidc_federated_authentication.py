@@ -18,6 +18,7 @@ from keystoneauth1 import identity
 from keystoneauth1 import session as ks_session
 from tempest import config
 from tempest.lib.common.utils import data_utils
+from tempest.lib import exceptions
 import testtools
 
 from .keycloak import KeycloakClient
@@ -50,6 +51,14 @@ class TestOidcFederatedAuthentication(base.BaseIdentityTest):
 
         # custom CA certificate settings
         self.ca_certificates_file = CONF.identity.ca_certificates_file
+
+    def _check_existing_protocol(self):
+        try:
+            self.idps_client.get_protocol_and_mapping(
+                self.idp_id, self.protocol_id)
+            return True
+        except exceptions.NotFound:
+            return False
 
     def _setup_mapping(self):
         self.mapping_id = data_utils.rand_uuid_hex()
@@ -84,26 +93,12 @@ class TestOidcFederatedAuthentication(base.BaseIdentityTest):
             self.idp_id,
             self.protocol_id)
 
-    def setUp(self):
-        super(TestOidcFederatedAuthentication, self).setUp()
-        self._setup_settings()
-
-        # Setup mapping and protocol
-        self._setup_mapping()
-        self._setup_protocol()
-        self.keycloak = KeycloakClient(
-            keycloak_url=self.idp_url,
-            keycloak_username=self.idp_username,
-            keycloak_password=self.idp_password,
-            ca_certs_file=self.ca_certificates_file,
-        )
-
     def _setup_user(self, email=None):
         email = email if email else f'test-{uuid.uuid4().hex}@example.com'
         self.keycloak.create_user(email, 'Test', 'User')
         return email
 
-    def _request_unscoped_token(self, user):
+    def _request_unscoped_token(self, user, password):
         auth = identity.v3.OidcPassword(
             auth_url=self.keystone_v3_endpoint,
             identity_provider=self.idp_id,
@@ -113,10 +108,33 @@ class TestOidcFederatedAuthentication(base.BaseIdentityTest):
             access_token_endpoint=self.keycloak.token_endpoint,
             discovery_endpoint=self.keycloak.discovery_endpoint,
             username=user,
-            password='secret'
+            password=password
         )
         s = ks_session.Session(auth, verify=self.ca_certificates_file)
         return s.get_auth_headers()
+
+    def setUp(self):
+        super(TestOidcFederatedAuthentication, self).setUp()
+        self._setup_settings()
+
+        # Setup mapping and protocol
+        if not self._check_existing_protocol():
+            self._setup_mapping()
+            self._setup_protocol()
+
+        self.keycloak = KeycloakClient(
+            keycloak_url=self.idp_url,
+            keycloak_username=self.idp_username,
+            keycloak_password=self.idp_password,
+            ca_certs_file=self.ca_certificates_file,
+        )
+
+        if CONF.fed_scenario.idp_test_user_name:
+            self.test_user = CONF.fed_scenario.idp_test_user_name
+            self.test_user_password = CONF.fed_scenario.idp_test_user_password
+        else:
+            self.test_user = self._setup_user()
+            self.test_user_password = 'secret'
 
     @testtools.skipUnless(CONF.identity_feature_enabled.federation,
                           "Federated Identity feature not enabled")
@@ -125,10 +143,9 @@ class TestOidcFederatedAuthentication(base.BaseIdentityTest):
     @testtools.skipUnless(CONF.fed_scenario.protocol_id == 'openid',
                           "Protocol not openid")
     def test_request_unscoped_token(self):
-        user = self._setup_user()
-        token = self._request_unscoped_token(user)
+        token = self._request_unscoped_token(self.test_user,
+                                             self.test_user_password)
         self.assertNotEmpty(token)
-        self.keycloak.delete_user(user)
 
     @testtools.skipUnless(CONF.identity_feature_enabled.federation,
                           "Federated Identity feature not enabled")
@@ -137,8 +154,8 @@ class TestOidcFederatedAuthentication(base.BaseIdentityTest):
     @testtools.skipUnless(CONF.fed_scenario.protocol_id == 'openid',
                           "Protocol not openid")
     def test_request_scoped_token(self):
-        user = self._setup_user()
-        token = self._request_unscoped_token(user)
+        token = self._request_unscoped_token(self.test_user,
+                                             self.test_user_password)
         token_id = token['X-Auth-Token']
 
         projects = self.auth_client.get_available_projects_scopes(
@@ -148,4 +165,8 @@ class TestOidcFederatedAuthentication(base.BaseIdentityTest):
         # Get a scoped token to one of the listed projects
         self.tokens_client.auth(
             project_id=projects[0]['id'], token=token_id)
-        self.keycloak.delete_user(user)
+
+    def tearDown(self):
+        super(TestOidcFederatedAuthentication, self).tearDown()
+        if not CONF.fed_scenario.idp_test_user_name:
+            self.keycloak.delete_user(self.test_user)

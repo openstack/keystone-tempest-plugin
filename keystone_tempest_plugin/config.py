@@ -44,7 +44,8 @@ FedScenarioGroup = [
     cfg.StrOpt('idp_username',
                help='Username used to login in the Identity Provider'),
     cfg.StrOpt('idp_password',
-               help='Password used to login in the Identity Provider'),
+               help='Password used to login in the Identity Provider',
+               secret=True),
     cfg.StrOpt('idp_ecp_url',
                help='Identity Provider SAML2/ECP URL'),
     cfg.StrOpt('idp_oidc_url',
@@ -55,6 +56,13 @@ FedScenarioGroup = [
                help='Identity Provider Client ID'),
     cfg.StrOpt('idp_client_secret',
                help='Identity Provider Client Secret'),
+
+    # existing user (oidc)
+    cfg.StrOpt('idp_test_user_name',
+               help='Identity Provider Test User Name'),
+    cfg.StrOpt('idp_test_user_password',
+               help='Identity Provider Test User Password',
+               secret=True),
 
     # Mapping rules
     cfg.StrOpt('mapping_remote_type',
@@ -81,5 +89,4 @@ FedScenarioGroup = [
     cfg.StrOpt('protocol_id',
                default='mapped',
                help='The Protocol ID'),
-
 ]

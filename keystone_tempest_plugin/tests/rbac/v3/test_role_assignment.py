@@ -939,13 +939,37 @@ class DomainAdminTests(IdentityV3RbacAssignmentTest, base.BaseIdentityTest):
         # Should not see subtree assignments for project in other domain
         query = {'scope.project.id': self.project_other_domain,
                  'include_subtree': True}
-        self.do_request('list_role_assignments',
-                        expected_status=exceptions.Forbidden, **query)
+        self.do_request('list_role_assignments', **query)
 
 
 class DomainMemberTests(DomainAdminTests):
 
     credentials = ['domain_member', 'system_admin']
+
+    def test_identity_list_role_assignments_for_tree(self):
+        # Should see subtree assignments for project in own domain
+        subproject_id = self.admin_client.projects_client.create_project(
+            name=data_utils.rand_name('project'),
+            domain_id=self.own_domain,
+            parent_id=self.project_in_domain)['project']['id']
+        self.addCleanup(self.admin_client.projects_client.delete_project,
+                        subproject_id)
+        self.admin_client.roles_v3_client.create_user_role_on_project(
+            subproject_id, self.user_in_domain, self.role_id)
+        query = {'scope.project.id': self.project_in_domain,
+                 'include_subtree': True}
+        resp = self.do_request('list_role_assignments', **query)
+        actual = self._extract_role_assignments_from_response_body(resp)
+        expected_assignment = {'user_id': self.user_in_domain,
+                               'project_id': subproject_id,
+                               'role_id': self.role_id}
+        self.assertIn(expected_assignment, actual)
+
+        # Should not see subtree assignments for project in other domain
+        query = {'scope.project.id': self.project_other_domain,
+                 'include_subtree': True}
+        self.do_request('list_role_assignments',
+                        expected_status=exceptions.Forbidden, **query)
 
 
 class DomainReaderTests(DomainMemberTests):
@@ -953,9 +977,14 @@ class DomainReaderTests(DomainMemberTests):
     credentials = ['domain_reader', 'system_admin']
 
 
-class ProjectAdminTests(IdentityV3RbacAssignmentTest, base.BaseIdentityTest):
+class ProjectAdminTests(SystemAdminTests):
 
     credentials = ['project_admin', 'system_admin']
+
+
+class ProjectMemberTests(IdentityV3RbacAssignmentTest, base.BaseIdentityTest):
+
+    credentials = ['project_member', 'system_admin']
 
     def test_identity_list_role_assignments(self):
         # Listing all assignments with no filters should fail
@@ -1066,43 +1095,6 @@ class ProjectAdminTests(IdentityV3RbacAssignmentTest, base.BaseIdentityTest):
                  'scope.domain.id': self.own_domain}
         self.do_request('list_role_assignments',
                         expected_status=exceptions.Forbidden, **query)
-
-    def test_identity_list_role_assignments_for_tree(self):
-        # Should not see subtree assignments for project in own domain
-        query = {'scope.project.id': self.project_in_domain,
-                 'include_subtree': True}
-        self.do_request('list_role_assignments',
-                        expected_status=exceptions.Forbidden, **query)
-
-        # Should not see subtree assignments for project in other domain
-        query = {'scope.project.id': self.project_other_domain,
-                 'include_subtree': True}
-        self.do_request('list_role_assignments',
-                        expected_status=exceptions.Forbidden, **query)
-
-        # Should see subtree for own project
-        own_project = self.persona.credentials.project_id
-        subproject_id = self.admin_client.projects_client.create_project(
-            name=data_utils.rand_name('project'),
-            domain_id=self.own_domain,
-            parent_id=own_project)['project']['id']
-        self.addCleanup(self.admin_client.projects_client.delete_project,
-                        subproject_id)
-        self.admin_client.roles_v3_client.create_user_role_on_project(
-            subproject_id, self.user_other_domain, self.role_id)
-        query = {'scope.project.id': own_project,
-                 'include_subtree': True}
-        resp = self.do_request('list_role_assignments', **query)
-        expected_assignment = {'user_id': self.user_other_domain,
-                               'project_id': subproject_id,
-                               'role_id': self.role_id}
-        actual = self._extract_role_assignments_from_response_body(resp)
-        self.assertIn(expected_assignment, actual)
-
-
-class ProjectMemberTests(ProjectAdminTests):
-
-    credentials = ['project_member', 'system_admin']
 
     def test_identity_list_role_assignments_for_tree(self):
         # Should not see subtree assignments for project in own domain

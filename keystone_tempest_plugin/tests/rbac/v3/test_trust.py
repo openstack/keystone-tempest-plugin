@@ -367,13 +367,42 @@ class DomainReaderTests(DomainAdminTests):
     credentials = ['domain_reader', 'system_admin']
 
 
-class ProjectAdminTests(IdentityV3RbacTrustTest, base.BaseIdentityTest):
+class ProjectAdminTests(SystemAdminTests):
 
     credentials = ['project_admin', 'system_admin']
 
     def setUp(self):
         super(ProjectAdminTests, self).setUp()
         self.role_id = self.admin_role_id
+
+    def test_identity_create_trust(self):
+        # user can create a trust for their own project
+        trustor_user_id = self.persona.credentials.user_id
+        project_id = self.persona.credentials.project_id
+        resp = self.do_request(
+            'create_trust',
+            expected_status=201,
+            **self.trust(
+                trustor=trustor_user_id,
+                project_id=project_id,
+                roles=[{'id': self.role_id}])
+        )['trust']
+        self.addCleanup(self.client.delete_trust, resp['id'])
+
+        # user cannot create trust with another user as trustor
+        self.do_request(
+            'create_trust',
+            expected_status=exceptions.Forbidden,
+            **self.trust())
+
+
+class ProjectMemberTests(IdentityV3RbacTrustTest, base.BaseIdentityTest):
+
+    credentials = ['project_member', 'system_admin']
+
+    def setUp(self):
+        super(ProjectMemberTests, self).setUp()
+        self.role_id = self.member_role_id
 
     def test_identity_create_trust(self):
         # user can create a trust for their own project
@@ -541,16 +570,7 @@ class ProjectAdminTests(IdentityV3RbacTrustTest, base.BaseIdentityTest):
                         trust_id=trust_id)
 
 
-class ProjectMemberTests(ProjectAdminTests):
-
-    credentials = ['project_member', 'system_admin']
-
-    def setUp(self):
-        super(ProjectMemberTests, self).setUp()
-        self.role_id = self.member_role_id
-
-
-class ProjectReaderTests(ProjectAdminTests):
+class ProjectReaderTests(ProjectMemberTests):
 
     credentials = ['project_reader', 'system_admin']
 

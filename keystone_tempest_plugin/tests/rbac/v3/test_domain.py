@@ -176,18 +176,6 @@ class DomainAdminTests(SystemReaderTests, base.BaseIdentityTest):
 
     credentials = ['domain_admin', 'system_admin']
 
-    def test_identity_get_domain(self):
-        domain_id = self.admin_domains_client.create_domain(
-            name=data_utils.rand_name())['domain']['id']
-        self.addCleanup(self.admin_domains_client.delete_domain, domain_id)
-        self.addCleanup(self.admin_domains_client.update_domain,
-                        domain_id=domain_id, enabled=False)
-        self.do_request('show_domain', expected_status=exceptions.Forbidden,
-                        domain_id=domain_id)
-        # user gets a 403 for nonexistent domain
-        self.do_request('show_domain', expected_status=exceptions.Forbidden,
-                        domain_id=data_utils.rand_uuid_hex())
-
     def test_identity_list_domains(self):
         domain_id = self.admin_domains_client.create_domain(
             name=data_utils.rand_name())['domain']['id']
@@ -200,6 +188,18 @@ class DomainAdminTests(SystemReaderTests, base.BaseIdentityTest):
 
 class DomainMemberTests(DomainAdminTests, base.BaseIdentityTest):
 
+    def test_identity_get_domain(self):
+        domain_id = self.admin_domains_client.create_domain(
+            name=data_utils.rand_name())['domain']['id']
+        self.addCleanup(self.admin_domains_client.delete_domain, domain_id)
+        self.addCleanup(self.admin_domains_client.update_domain,
+                        domain_id=domain_id, enabled=False)
+        self.do_request('show_domain', expected_status=exceptions.Forbidden,
+                        domain_id=domain_id)
+        # user gets a 403 for nonexistent domain
+        self.do_request('show_domain', expected_status=exceptions.Forbidden,
+                        domain_id=data_utils.rand_uuid_hex())
+
     credentials = ['domain_member', 'system_admin']
 
 
@@ -208,16 +208,16 @@ class DomainReaderTests(DomainMemberTests):
     credentials = ['domain_reader', 'system_admin']
 
 
-class ProjectAdminTests(DomainReaderTests, base.BaseIdentityTest):
+class ProjectAdminTests(SystemAdminTests):
 
     credentials = ['project_admin', 'system_admin']
 
 
-class ProjectMemberTests(ProjectAdminTests):
+class ProjectMemberTests(DomainReaderTests):
 
     credentials = ['project_member', 'system_admin']
 
 
-class ProjectReaderTests(ProjectAdminTests):
+class ProjectReaderTests(ProjectMemberTests):
 
     credentials = ['project_reader', 'system_admin']

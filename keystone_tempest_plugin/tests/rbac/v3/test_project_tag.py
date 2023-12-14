@@ -241,6 +241,103 @@ class DomainAdminTests(IdentityV3RbacProjectTagTests, base.BaseIdentityTest):
             project_id=self.own_project_id,
             tag=tag
         )
+        # user can add tags to project in other domain
+        tag = data_utils.rand_uuid_hex()
+        self.do_request(
+            'update_project_tag', expected_status=201,
+            project_id=self.other_project_id,
+            tag=tag
+        )
+
+    def test_identity_get_project_tag(self):
+        # user can get tag for project in own domain
+        tag = data_utils.rand_uuid_hex()
+        self.admin_project_tags_client.update_project_tag(
+            project_id=self.own_project_id, tag=tag)
+        self.do_request('check_project_tag_existence',
+                        expected_status=204,
+                        project_id=self.own_project_id, tag=tag)
+        # user can get tag for project in other domain
+        tag = data_utils.rand_uuid_hex()
+        self.admin_project_tags_client.update_project_tag(
+            project_id=self.other_project_id, tag=tag)
+        self.do_request('check_project_tag_existence',
+                        expected_status=204,
+                        project_id=self.other_project_id, tag=tag)
+
+    def test_identity_list_project_tags(self):
+        # user can list tags for project in own domain
+        tag = data_utils.rand_uuid_hex()
+        self.admin_project_tags_client.update_project_tag(
+            project_id=self.own_project_id, tag=tag)
+        resp = self.do_request('list_project_tags',
+                               project_id=self.own_project_id)
+        self.assertIn(tag, resp['tags'])
+        # user can list tags for project in other domain
+        tag = data_utils.rand_uuid_hex()
+        self.admin_project_tags_client.update_project_tag(
+            project_id=self.other_project_id, tag=tag)
+        resp = self.do_request('list_project_tags',
+                               project_id=self.other_project_id)
+        self.assertIn(tag, resp['tags'])
+
+    def test_identity_update_project_tags(self):
+        # user can update tags for project in own domain
+        tag = data_utils.rand_uuid_hex()
+        self.do_request('update_all_project_tags',
+                        project_id=self.own_project_id,
+                        tags=[tag])
+        # user can update tags for project in other domain
+        tag = data_utils.rand_uuid_hex()
+        self.do_request('update_all_project_tags',
+                        project_id=self.other_project_id,
+                        tags=[tag])
+
+    def test_identity_delete_project_tag(self):
+        # user can delete tag for project in own domain
+        tag = data_utils.rand_uuid_hex()
+        self.admin_project_tags_client.update_project_tag(
+            project_id=self.own_project_id, tag=tag)
+        self.do_request('delete_project_tag', expected_status=204,
+                        project_id=self.own_project_id,
+                        tag=tag)
+        # user can delete tag for project in other domain
+        tag = data_utils.rand_uuid_hex()
+        self.admin_project_tags_client.update_project_tag(
+            project_id=self.other_project_id, tag=tag)
+        self.do_request('delete_project_tag',
+                        expected_status=204,
+                        project_id=self.other_project_id,
+                        tag=tag)
+
+    def test_identity_delete_project_tags(self):
+        # user can delete tags for project in own domain
+        tag = data_utils.rand_uuid_hex()
+        self.admin_project_tags_client.update_project_tag(
+            project_id=self.own_project_id, tag=tag)
+        self.do_request('delete_all_project_tags', expected_status=204,
+                        project_id=self.own_project_id)
+        # user can delete tags for project in other domain
+        tag = data_utils.rand_uuid_hex()
+        self.admin_project_tags_client.update_project_tag(
+            project_id=self.other_project_id, tag=tag)
+        self.do_request('delete_all_project_tags',
+                        expected_status=204,
+                        project_id=self.other_project_id)
+
+
+class DomainMemberTests(DomainAdminTests):
+
+    credentials = ['domain_member', 'system_admin']
+
+    def test_identity_create_project_tag(self):
+        # user cannot add tags to project in own domain
+        tag = data_utils.rand_uuid_hex()
+        self.do_request(
+            'update_project_tag', expected_status=exceptions.Forbidden,
+            project_id=self.own_project_id,
+            tag=tag
+        )
         # user cannot add tags to project in other domain
         tag = data_utils.rand_uuid_hex()
         self.do_request(
@@ -280,72 +377,6 @@ class DomainAdminTests(IdentityV3RbacProjectTagTests, base.BaseIdentityTest):
         self.do_request('list_project_tags',
                         expected_status=exceptions.Forbidden,
                         project_id=self.other_project_id)
-
-    def test_identity_update_project_tags(self):
-        # user can update tags for project in own domain
-        tag = data_utils.rand_uuid_hex()
-        self.do_request('update_all_project_tags',
-                        project_id=self.own_project_id,
-                        tags=[tag])
-        # user cannot update tags for project in other domain
-        tag = data_utils.rand_uuid_hex()
-        self.do_request('update_all_project_tags',
-                        expected_status=exceptions.Forbidden,
-                        project_id=self.other_project_id,
-                        tags=[tag])
-
-    def test_identity_delete_project_tag(self):
-        # user can delete tag for project in own domain
-        tag = data_utils.rand_uuid_hex()
-        self.admin_project_tags_client.update_project_tag(
-            project_id=self.own_project_id, tag=tag)
-        self.do_request('delete_project_tag', expected_status=204,
-                        project_id=self.own_project_id,
-                        tag=tag)
-        # user cannot delete tag for project in other domain
-        tag = data_utils.rand_uuid_hex()
-        self.admin_project_tags_client.update_project_tag(
-            project_id=self.other_project_id, tag=tag)
-        self.do_request('delete_project_tag',
-                        expected_status=exceptions.Forbidden,
-                        project_id=self.other_project_id,
-                        tag=tag)
-
-    def test_identity_delete_project_tags(self):
-        # user can delete tags for project in own domain
-        tag = data_utils.rand_uuid_hex()
-        self.admin_project_tags_client.update_project_tag(
-            project_id=self.own_project_id, tag=tag)
-        self.do_request('delete_all_project_tags', expected_status=204,
-                        project_id=self.own_project_id)
-        # user cannot delete tags for project in other domain
-        tag = data_utils.rand_uuid_hex()
-        self.admin_project_tags_client.update_project_tag(
-            project_id=self.other_project_id, tag=tag)
-        self.do_request('delete_all_project_tags',
-                        expected_status=exceptions.Forbidden,
-                        project_id=self.other_project_id)
-
-
-class DomainMemberTests(DomainAdminTests, base.BaseIdentityTest):
-
-    credentials = ['domain_member', 'system_admin']
-
-    def test_identity_create_project_tag(self):
-        # user cannot add tags to project in own domain
-        tag = data_utils.rand_uuid_hex()
-        self.do_request(
-            'update_project_tag', expected_status=exceptions.Forbidden,
-            project_id=self.own_project_id,
-            tag=tag
-        )
-        # user cannot add tags to project in other domain
-        tag = data_utils.rand_uuid_hex()
-        self.do_request(
-            'update_project_tag', expected_status=exceptions.Forbidden,
-            project_id=self.other_project_id,
-            tag=tag
-        )
 
     def test_identity_update_project_tags(self):
         # user cannot update tags for project in own domain
@@ -401,12 +432,17 @@ class DomainReaderTests(DomainMemberTests):
     credentials = ['domain_reader', 'system_admin']
 
 
-class ProjectAdminTests(IdentityV3RbacProjectTagTests, base.BaseIdentityTest):
+class ProjectAdminTests(DomainAdminTests):
 
     credentials = ['project_admin', 'system_admin']
 
+
+class ProjectMemberTests(DomainMemberTests):
+
+    credentials = ['project_member', 'system_admin']
+
     def setUp(self):
-        super(ProjectAdminTests, self).setUp()
+        super().setUp()
         self.own_project_id = self.persona.credentials.project_id
         project_client = self.admin_client.projects_client
         self.other_project_id = project_client.create_project(
@@ -414,16 +450,13 @@ class ProjectAdminTests(IdentityV3RbacProjectTagTests, base.BaseIdentityTest):
         self.addCleanup(project_client.delete_project, self.other_project_id)
 
     def test_identity_create_project_tag(self):
-        # user can add tags to own project
+        # user cannot add tags to own project
         tag = data_utils.rand_uuid_hex()
         self.do_request(
-            'update_project_tag', expected_status=201,
+            'update_project_tag', expected_status=exceptions.Forbidden,
             project_id=self.own_project_id,
             tag=tag
         )
-        self.addCleanup(self.admin_project_tags_client.delete_project_tag,
-                        project_id=self.own_project_id,
-                        tag=tag)
         # user cannot add tags to arbitrary project
         tag = data_utils.rand_uuid_hex()
         self.do_request(
@@ -469,75 +502,6 @@ class ProjectAdminTests(IdentityV3RbacProjectTagTests, base.BaseIdentityTest):
         self.do_request('list_project_tags',
                         expected_status=exceptions.Forbidden,
                         project_id=self.other_project_id)
-
-    def test_identity_update_project_tags(self):
-        # user can update tags for own project
-        tag = data_utils.rand_uuid_hex()
-        self.do_request('update_all_project_tags',
-                        project_id=self.own_project_id,
-                        tags=[tag])
-        self.addCleanup(self.admin_project_tags_client.delete_project_tag,
-                        project_id=self.own_project_id,
-                        tag=tag)
-        # user cannot update tags for arbitrary project
-        tag = data_utils.rand_uuid_hex()
-        self.do_request('update_all_project_tags',
-                        expected_status=exceptions.Forbidden,
-                        project_id=self.other_project_id,
-                        tags=[tag])
-
-    def test_identity_delete_project_tag(self):
-        # user can delete tag for own project
-        tag = data_utils.rand_uuid_hex()
-        self.admin_project_tags_client.update_project_tag(
-            project_id=self.own_project_id, tag=tag)
-        self.do_request('delete_project_tag', expected_status=204,
-                        project_id=self.own_project_id,
-                        tag=tag)
-        # user cannot delete tag for arbitrary project
-        tag = data_utils.rand_uuid_hex()
-        self.admin_project_tags_client.update_project_tag(
-            project_id=self.other_project_id, tag=tag)
-        self.do_request('delete_project_tag',
-                        expected_status=exceptions.Forbidden,
-                        project_id=self.other_project_id,
-                        tag=tag)
-
-    def test_identity_delete_project_tags(self):
-        # user can delete tags for own project
-        tag = data_utils.rand_uuid_hex()
-        self.admin_project_tags_client.update_project_tag(
-            project_id=self.own_project_id, tag=tag)
-        self.do_request('delete_all_project_tags', expected_status=204,
-                        project_id=self.own_project_id)
-        # user cannot delete tags for arbitrary project
-        tag = data_utils.rand_uuid_hex()
-        self.admin_project_tags_client.update_project_tag(
-            project_id=self.other_project_id, tag=tag)
-        self.do_request('delete_all_project_tags',
-                        expected_status=exceptions.Forbidden,
-                        project_id=self.other_project_id)
-
-
-class ProjectMemberTests(ProjectAdminTests):
-
-    credentials = ['project_member', 'system_admin']
-
-    def test_identity_create_project_tag(self):
-        # user cannot add tags to own project
-        tag = data_utils.rand_uuid_hex()
-        self.do_request(
-            'update_project_tag', expected_status=exceptions.Forbidden,
-            project_id=self.own_project_id,
-            tag=tag
-        )
-        # user cannot add tags to arbitrary project
-        tag = data_utils.rand_uuid_hex()
-        self.do_request(
-            'update_project_tag', expected_status=exceptions.Forbidden,
-            project_id=self.other_project_id,
-            tag=tag
-        )
 
     def test_identity_update_project_tags(self):
         # user cannot update tags for own project

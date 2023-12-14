@@ -225,6 +225,134 @@ class DomainAdminTests(IdentityV3RbacProjectsTests, base.BaseIdentityTest):
             domain_id=self.own_domain
         )['project']['id']
         self.addCleanup(self.admin_projects_client.delete_project, project_id)
+        # user can create project in other domain
+        project_id = self.do_request(
+            'create_project', expected_status=201, name=data_utils.rand_name(),
+            domain_id=self.other_domain
+        )['project']['id']
+        self.addCleanup(self.admin_projects_client.delete_project, project_id)
+
+    def test_identity_get_project(self):
+        # user can get project in own domain
+        project_id = self.admin_projects_client.create_project(
+            name=data_utils.rand_name(),
+            domain_id=self.own_domain)['project']['id']
+        self.addCleanup(self.admin_projects_client.delete_project, project_id)
+        self.do_request('show_project', project_id=project_id)
+        # user can get project in other domain
+        project_id = self.admin_projects_client.create_project(
+            name=data_utils.rand_name(),
+            domain_id=self.other_domain)['project']['id']
+        self.addCleanup(self.admin_projects_client.delete_project, project_id)
+        self.do_request('show_project', project_id=project_id)
+        # user gets a 403 for nonexistent project
+        self.do_request('show_project', expected_status=exceptions.NotFound,
+                        project_id=data_utils.rand_uuid_hex())
+
+    def test_identity_list_projects(self):
+        # user can list projects but cannot see project in other domain
+        own_project_id = self.admin_projects_client.create_project(
+            name=data_utils.rand_name(),
+            domain_id=self.own_domain)['project']['id']
+        self.addCleanup(self.admin_projects_client.delete_project,
+                        own_project_id)
+        other_project_id = self.admin_projects_client.create_project(
+            name=data_utils.rand_name(),
+            domain_id=self.other_domain)['project']['id']
+        self.addCleanup(self.admin_projects_client.delete_project,
+                        other_project_id)
+        resp = self.do_request('list_projects')
+        self.assertIn(own_project_id, [d['id'] for d in resp['projects']])
+        self.assertNotIn(other_project_id, [d['id'] for d in resp['projects']])
+
+    def test_identity_list_user_projects(self):
+        # user can list projects for user in own domain
+        user_id = self.admin_client.users_v3_client.create_user(
+            name=data_utils.rand_name(),
+            domain_id=self.own_domain)['user']['id']
+        self.addCleanup(self.admin_client.users_v3_client.delete_user, user_id)
+        project_id = self.admin_projects_client.create_project(
+            name=data_utils.rand_name())['project']['id']
+        self.addCleanup(self.admin_projects_client.delete_project, project_id)
+        role_id = self.admin_client.roles_v3_client.create_role(
+            name=data_utils.rand_name())['role']['id']
+        self.addCleanup(self.admin_client.roles_v3_client.delete_role,
+                        role_id)
+        self.admin_client.roles_v3_client.create_user_role_on_project(
+            project_id, user_id, role_id)
+        resp = self.do_request('list_user_projects', client=self.users_client,
+                               user_id=user_id)
+        self.assertIn(project_id, [p['id'] for p in resp['projects']])
+        # user can list projects for user in other domain
+        user_id = self.admin_client.users_v3_client.create_user(
+            name=data_utils.rand_name(),
+            domain_id=self.other_domain)['user']['id']
+        self.addCleanup(self.admin_client.users_v3_client.delete_user, user_id)
+        project_id = self.admin_projects_client.create_project(
+            name=data_utils.rand_name())['project']['id']
+        self.addCleanup(self.admin_projects_client.delete_project, project_id)
+        role_id = self.admin_client.roles_v3_client.create_role(
+            name=data_utils.rand_name())['role']['id']
+        self.addCleanup(self.admin_client.roles_v3_client.delete_role,
+                        role_id)
+        self.admin_client.roles_v3_client.create_user_role_on_project(
+            project_id, user_id, role_id)
+        resp = self.do_request('list_user_projects', client=self.users_client,
+                               user_id=user_id)
+        self.assertIn(project_id, [p['id'] for p in resp['projects']])
+        # user can list projects for self
+        resp = self.do_request('list_user_projects', client=self.users_client,
+                               user_id=self.persona.credentials.user_id)
+        self.assertEqual(0, len([p['id'] for p in resp['projects']]))
+
+    def test_identity_update_project(self):
+        # user can update project in own domain
+        project_id = self.admin_projects_client.create_project(
+            name=data_utils.rand_name(),
+            domain_id=self.own_domain)['project']['id']
+        self.addCleanup(self.admin_projects_client.delete_project, project_id)
+        self.do_request('update_project',
+                        project_id=project_id,
+                        description=data_utils.arbitrary_string())
+        # user can update project in other domain
+        project_id = self.admin_projects_client.create_project(
+            name=data_utils.rand_name(),
+            domain_id=self.other_domain)['project']['id']
+        self.addCleanup(self.admin_projects_client.delete_project, project_id)
+        self.do_request('update_project',
+                        project_id=project_id,
+                        description=data_utils.arbitrary_string())
+        # user gets a 404 for nonexistent domain
+        self.do_request('update_project', expected_status=exceptions.NotFound,
+                        project_id=data_utils.rand_uuid_hex(),
+                        description=data_utils.arbitrary_string())
+
+    def test_identity_delete_project(self):
+        # user can delete project in own domain
+        project_id = self.admin_projects_client.create_project(
+            name=data_utils.rand_name(),
+            domain_id=self.own_domain)['project']['id']
+        self.do_request('delete_project', expected_status=204,
+                        project_id=project_id)
+        # user can delete project in other domain
+        project_id = self.admin_projects_client.create_project(
+            name=data_utils.rand_name(),
+            domain_id=self.other_domain)['project']['id']
+        self.do_request('delete_project', expected_status=204,
+                        project_id=project_id)
+
+
+class DomainMemberTests(DomainAdminTests):
+
+    credentials = ['domain_member', 'system_admin']
+
+    def test_identity_create_project(self):
+        # user cannot create project in own domain
+        self.do_request(
+            'create_project', expected_status=exceptions.Forbidden,
+            name=data_utils.rand_name(),
+            domain_id=self.own_domain
+        )
         # user cannot create project in other domain
         self.do_request(
             'create_project', expected_status=exceptions.Forbidden,
@@ -248,22 +376,6 @@ class DomainAdminTests(IdentityV3RbacProjectsTests, base.BaseIdentityTest):
         # user gets a 403 for nonexistent project
         self.do_request('show_project', expected_status=exceptions.Forbidden,
                         project_id=data_utils.rand_uuid_hex())
-
-    def test_identity_list_projects(self):
-        # user can list projects but cannot see project in other domain
-        own_project_id = self.admin_projects_client.create_project(
-            name=data_utils.rand_name(),
-            domain_id=self.own_domain)['project']['id']
-        self.addCleanup(self.admin_projects_client.delete_project,
-                        own_project_id)
-        other_project_id = self.admin_projects_client.create_project(
-            name=data_utils.rand_name(),
-            domain_id=self.other_domain)['project']['id']
-        self.addCleanup(self.admin_projects_client.delete_project,
-                        other_project_id)
-        resp = self.do_request('list_projects')
-        self.assertIn(own_project_id, [d['id'] for d in resp['projects']])
-        self.assertNotIn(other_project_id, [d['id'] for d in resp['projects']])
 
     def test_identity_list_user_projects(self):
         # user can list projects for user in own domain
@@ -304,62 +416,6 @@ class DomainAdminTests(IdentityV3RbacProjectsTests, base.BaseIdentityTest):
         resp = self.do_request('list_user_projects', client=self.users_client,
                                user_id=self.persona.credentials.user_id)
         self.assertEqual(0, len([p['id'] for p in resp['projects']]))
-
-    def test_identity_update_project(self):
-        # user can update project in own domain
-        project_id = self.admin_projects_client.create_project(
-            name=data_utils.rand_name(),
-            domain_id=self.own_domain)['project']['id']
-        self.addCleanup(self.admin_projects_client.delete_project, project_id)
-        self.do_request('update_project',
-                        project_id=project_id,
-                        description=data_utils.arbitrary_string())
-        # user cannot update project in other domain
-        project_id = self.admin_projects_client.create_project(
-            name=data_utils.rand_name(),
-            domain_id=self.other_domain)['project']['id']
-        self.addCleanup(self.admin_projects_client.delete_project, project_id)
-        self.do_request('update_project',
-                        expected_status=exceptions.Forbidden,
-                        project_id=project_id,
-                        description=data_utils.arbitrary_string())
-        # user gets a 403 for nonexistent domain
-        self.do_request('update_project', expected_status=exceptions.Forbidden,
-                        project_id=data_utils.rand_uuid_hex(),
-                        description=data_utils.arbitrary_string())
-
-    def test_identity_delete_project(self):
-        # user can delete project in own domain
-        project_id = self.admin_projects_client.create_project(
-            name=data_utils.rand_name(),
-            domain_id=self.own_domain)['project']['id']
-        self.do_request('delete_project', expected_status=204,
-                        project_id=project_id)
-        # user cannot delete project in other domain
-        project_id = self.admin_projects_client.create_project(
-            name=data_utils.rand_name(),
-            domain_id=self.other_domain)['project']['id']
-        self.addCleanup(self.admin_projects_client.delete_project, project_id)
-        self.do_request('delete_project', expected_status=exceptions.Forbidden,
-                        project_id=project_id)
-
-
-class DomainMemberTests(DomainAdminTests, base.BaseIdentityTest):
-
-    credentials = ['domain_member', 'system_admin']
-
-    def test_identity_create_project(self):
-        # user cannot create project in own domain
-        self.do_request(
-            'create_project', expected_status=exceptions.Forbidden,
-            name=data_utils.rand_name(),
-            domain_id=self.own_domain
-        )
-        # user cannot create project in other domain
-        self.do_request(
-            'create_project', expected_status=exceptions.Forbidden,
-            name=data_utils.rand_name(), domain_id=self.other_domain
-        )
 
     def test_identity_update_project(self):
         # user cannot update project in own domain
@@ -406,9 +462,38 @@ class DomainReaderTests(DomainMemberTests):
     credentials = ['domain_reader', 'system_admin']
 
 
-class ProjectAdminTests(DomainReaderTests, base.BaseIdentityTest):
+class ProjectAdminTests(SystemAdminTests):
 
     credentials = ['project_admin', 'system_admin']
+
+    def test_identity_list_user_projects(self):
+        user_id = self.admin_client.users_v3_client.create_user(
+            name=data_utils.rand_name())['user']['id']
+        self.addCleanup(self.admin_client.users_v3_client.delete_user, user_id)
+        project_id = self.admin_projects_client.create_project(
+            name=data_utils.rand_name())['project']['id']
+        self.addCleanup(self.admin_projects_client.delete_project, project_id)
+        role_id = self.admin_client.roles_v3_client.create_role(
+            name=data_utils.rand_name())['role']['id']
+        self.addCleanup(self.admin_client.roles_v3_client.delete_role,
+                        role_id)
+        self.admin_client.roles_v3_client.create_user_role_on_project(
+            project_id, user_id, role_id)
+        # user can list projects for arbitrary user
+        resp = self.do_request('list_user_projects', client=self.users_client,
+                               user_id=user_id)
+        self.assertIn(project_id, [p['id'] for p in resp['projects']])
+        # user can list projects for self
+        # Project Admin is assigned to a tempest project so we cant re-use
+        # the System Admin test.
+        resp = self.do_request('list_user_projects', client=self.users_client,
+                               user_id=self.persona.credentials.user_id)
+        self.assertEqual(1, len([p['id'] for p in resp['projects']]))
+
+
+class ProjectMemberTests(DomainReaderTests):
+
+    credentials = ['project_member', 'system_admin']
 
     def test_identity_get_project(self):
         # user cannot get arbitrary project
@@ -457,11 +542,6 @@ class ProjectAdminTests(DomainReaderTests, base.BaseIdentityTest):
                       [p['id'] for p in resp['projects']])
 
 
-class ProjectMemberTests(ProjectAdminTests):
-
-    credentials = ['project_member', 'system_admin']
-
-
-class ProjectReaderTests(ProjectAdminTests):
+class ProjectReaderTests(ProjectMemberTests):
 
     credentials = ['project_reader', 'system_admin']

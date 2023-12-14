@@ -184,7 +184,8 @@ class SystemAdminTests(IdentityV3RbacLimitTests, base.BaseIdentityTest):
 
     def test_identity_list_limits(self):
         reg_limit_id = self.admin_limits_client.create_limits(
-            payload=self.limits())['limits'][0]['id']
+            payload=self.limits(project_id=self.persona.credentials.project_id)
+        )['limits'][0]['id']
         self.addCleanup(
             self.admin_limits_client.delete_limit,
             limit_id=reg_limit_id)
@@ -303,20 +304,8 @@ class DomainAdminTests(IdentityV3RbacLimitTests, base.BaseIdentityTest):
         self.addCleanup(
             self.admin_limits_client.delete_limit,
             limit_id=reg_limit_1)
-        # project in own domain
-        reg_limit_2 = self.admin_limits_client.create_limits(
-            payload=self.limits(project_id=self.own_project)
-        )['limits'][0]['id']
-        self.addCleanup(
-            self.admin_limits_client.delete_limit,
-            limit_id=reg_limit_2)
-        # cannot get limit for other project
         self.do_request('show_limit',
-                        expected_status=exceptions.Forbidden,
                         limit_id=reg_limit_1)
-        # can get limit for project in own domain
-        self.do_request('show_limit',
-                        limit_id=reg_limit_2)
 
     def test_identity_update_limit(self):
         # cannot update limit for arbitrary project
@@ -370,18 +359,40 @@ class DomainMemberTests(DomainAdminTests):
 
     credentials = ['domain_member', 'system_admin']
 
+    def test_identity_get_limit(self):
+        # random project
+        reg_limit_1 = self.admin_limits_client.create_limits(
+            payload=self.limits())['limits'][0]['id']
+        self.addCleanup(
+            self.admin_limits_client.delete_limit,
+            limit_id=reg_limit_1)
+        # project in own domain
+        reg_limit_2 = self.admin_limits_client.create_limits(
+            payload=self.limits(project_id=self.own_project)
+        )['limits'][0]['id']
+        self.addCleanup(
+            self.admin_limits_client.delete_limit,
+            limit_id=reg_limit_2)
+        # cannot get limit for other project
+        self.do_request('show_limit',
+                        expected_status=exceptions.Forbidden,
+                        limit_id=reg_limit_1)
+        # can get limit for project in own domain
+        self.do_request('show_limit',
+                        limit_id=reg_limit_2)
+
 
 class DomainReaderTests(DomainMemberTests):
 
     credentials = ['domain_reader', 'system_admin']
 
 
-class ProjectAdminTests(DomainReaderTests):
+class ProjectAdminTests(SystemAdminTests):
 
     credentials = ['project_admin', 'system_admin']
 
 
-class ProjectMemberTests(ProjectAdminTests):
+class ProjectMemberTests(DomainReaderTests):
 
     credentials = ['project_member', 'system_admin']
 

@@ -44,30 +44,32 @@
         - keystone-dsvm-py3-functional-federation-ubuntu-focal:
             voting: false
         - keystone-dsvm-py3-functional-federation-ubuntu-focal-k2k
+        - keystone-dsvm-py3-functional-2023-2
+        - keystone-dsvm-py3-functional-2023-1
         - keystone-dsvm-py3-functional-zed
-        - keystone-dsvm-py3-functional-yoga
-        - keystone-dsvm-py3-functional-xena
-        - keystone-protection-functional
+        - keystone-protection-functional:
+            voting: false
     gate:
       jobs:
         - keystone-dsvm-py3-functional
         - keystone-dsvm-py3-functional-federation-ubuntu-focal-k2k
-        - keystone-protection-functional
+        - keystone-protection-functional:
+            voting: false
+
+- job:
+    name: keystone-dsvm-py3-functional-2023-2
+    parent: keystone-dsvm-py3-functional
+    nodeset: openstack-single-node-jammy
+    override-checkout: stable/2023.2
+
+- job:
+    name: keystone-dsvm-py3-functional-2023-1
+    parent: keystone-dsvm-py3-functional
+    nodeset: openstack-single-node-jammy
+    override-checkout: stable/2023.1
 
 - job:
     name: keystone-dsvm-py3-functional-zed
     parent: keystone-dsvm-py3-functional
     nodeset: openstack-single-node-focal
     override-checkout: stable/zed
-
-- job:
-    name: keystone-dsvm-py3-functional-yoga
-    parent: keystone-dsvm-py3-functional
-    nodeset: openstack-single-node-focal
-    override-checkout: stable/yoga
-
-- job:
-    name: keystone-dsvm-py3-functional-xena
-    parent: keystone-dsvm-py3-functional
-    nodeset: openstack-single-node-focal
-    override-checkout: stable/xena

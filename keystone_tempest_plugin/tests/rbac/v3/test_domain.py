@@ -177,13 +177,9 @@ class DomainAdminTests(SystemReaderTests, base.BaseIdentityTest):
     credentials = ['domain_admin', 'system_admin']
 
     def test_identity_list_domains(self):
-        domain_id = self.admin_domains_client.create_domain(
-            name=data_utils.rand_name())['domain']['id']
-        self.addCleanup(self.admin_domains_client.delete_domain, domain_id)
-        self.addCleanup(self.admin_domains_client.update_domain,
-                        domain_id=domain_id, enabled=False)
-        self.do_request('list_domains',
-                        expected_status=exceptions.Forbidden)
+        domain_id = self.persona.credentials.domain_id
+        resp = self.do_request('list_domains')
+        self.assertIn(domain_id, [d['id'] for d in resp['domains']])
 
 
 class DomainMemberTests(DomainAdminTests, base.BaseIdentityTest):
@@ -216,6 +212,15 @@ class ProjectAdminTests(SystemAdminTests):
 class ProjectMemberTests(DomainReaderTests):
 
     credentials = ['project_member', 'system_admin']
+
+    def test_identity_list_domains(self):
+        domain_id = self.admin_domains_client.create_domain(
+            name=data_utils.rand_name())['domain']['id']
+        self.addCleanup(self.admin_domains_client.delete_domain, domain_id)
+        self.addCleanup(self.admin_domains_client.update_domain,
+                        domain_id=domain_id, enabled=False)
+        self.do_request('list_domains',
+                        expected_status=exceptions.Forbidden)
 
 
 class ProjectReaderTests(ProjectMemberTests):

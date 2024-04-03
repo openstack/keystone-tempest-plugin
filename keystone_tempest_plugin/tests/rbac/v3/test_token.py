@@ -229,7 +229,7 @@ class SystemReaderTests(SystemMemberTests):
     credentials = ['system_reader', 'system_admin']
 
 
-class DomainAdminTests(SystemReaderTests, base.BaseIdentityTest):
+class DomainAdminTests(SystemAdminTests):
 
     credentials = ['domain_admin', 'system_admin']
 
@@ -241,6 +241,11 @@ class DomainAdminTests(SystemReaderTests, base.BaseIdentityTest):
         }
         # call base setUp directly to ensure we don't use system creds
         super(SystemAdminTests, self).setUp()
+
+
+class DomainMemberTests(DomainAdminTests):
+
+    credentials = ['domain_member', 'system_admin']
 
     def test_identity_check_token(self):
         # user can check own token
@@ -274,18 +279,27 @@ class DomainAdminTests(SystemReaderTests, base.BaseIdentityTest):
                         expected_status=exceptions.Forbidden,
                         resp_token=self.project_token)
 
+    def test_identity_revoke_token(self):
+        # user can revoke own token
+        self.do_request('delete_token', expected_status=204,
+                        resp_token=self.own_token)
+        # user cannot revoke other system user's token
+        self.do_request('delete_token', expected_status=exceptions.Forbidden,
+                        resp_token=self.system_token)
+        # user cannot revoke domain user's token
+        self.do_request('delete_token', expected_status=exceptions.Forbidden,
+                        resp_token=self.domain_token)
+        # user cannot revoke project user's token
+        self.do_request('delete_token', expected_status=exceptions.Forbidden,
+                        resp_token=self.project_token)
 
-class DomainMemberTests(DomainAdminTests):
 
-    credentials = ['domain_member', 'system_admin']
-
-
-class DomainReaderTests(DomainAdminTests):
+class DomainReaderTests(DomainMemberTests):
 
     credentials = ['domain_reader', 'system_admin']
 
 
-class ProjectAdminTests(DomainAdminTests, base.BaseIdentityTest):
+class ProjectAdminTests(DomainAdminTests):
 
     credentials = ['project_admin', 'system_admin']
 
@@ -299,11 +313,20 @@ class ProjectAdminTests(DomainAdminTests, base.BaseIdentityTest):
         super(SystemAdminTests, self).setUp()
 
 
-class ProjectMemberTests(ProjectAdminTests):
+class ProjectMemberTests(DomainMemberTests):
 
     credentials = ['project_member', 'system_admin']
 
+    def setUp(self):
+        self.own_keystone_creds = {
+            'user_id': self.persona.credentials.user_id,
+            'password': self.persona.credentials.password,
+            'project_id': self.persona.credentials.project_id
+        }
+        # call base setUp directly to ensure we don't use system creds
+        super(SystemAdminTests, self).setUp()
 
-class ProjectReaderTests(ProjectAdminTests):
+
+class ProjectReaderTests(ProjectMemberTests):
 
     credentials = ['project_reader', 'system_admin']

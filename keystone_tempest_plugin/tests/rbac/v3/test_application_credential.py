@@ -411,14 +411,19 @@ class DomainReaderTests(DomainAdminTests):
     credentials = ['domain_reader', 'system_admin']
 
 
-class ProjectAdminTests(IdentityV3RbacApplicationCredentialTest,
-                        base.BaseIdentityTest):
+class ProjectAdminTests(SystemAdminTests):
 
     credentials = ['project_admin', 'system_admin']
 
+
+class ProjectMemberTests(IdentityV3RbacApplicationCredentialTest,
+                         base.BaseIdentityTest):
+
+    credentials = ['project_member', 'system_admin']
+
     @classmethod
     def setup_clients(cls):
-        super(ProjectAdminTests, cls).setup_clients()
+        super().setup_clients()
         cls.test_user_client, cls.test_user_id = cls.setup_user_client()
 
     def test_identity_create_application_credential(self):
@@ -555,11 +560,6 @@ class ProjectAdminTests(IdentityV3RbacApplicationCredentialTest,
             application_credential_id=data_utils.rand_uuid_hex())
 
 
-class ProjectMemberTests(ProjectAdminTests):
-
-    credentials = ['project_member', 'system_admin']
-
-
-class ProjectReaderTests(ProjectAdminTests):
+class ProjectReaderTests(ProjectMemberTests):
 
     credentials = ['project_reader', 'system_admin']

@@ -323,26 +323,10 @@ class DomainAdminTests(SystemReaderTests):
 
     credentials = ['domain_admin', 'system_admin']
 
-    def test_identity_get_role(self):
-        # user cannot get role
-        role = self.admin_roles_client.create_role(
-            **self.role())['role']
-        self.addCleanup(self.admin_roles_client.delete_role, role['id'])
-        self.do_request('show_role', expected_status=exceptions.Forbidden,
-                        role_id=role['id'])
-        # user gets a 404 for nonexistent role
-        self.do_request('show_role', expected_status=exceptions.NotFound,
-                        role_id=data_utils.rand_uuid_hex())
-
-    def test_identity_list_roles(self):
-        # user cannot list roles
-        role = self.admin_roles_client.create_role(**self.role())['role']
-        self.addCleanup(self.admin_roles_client.delete_role, role['id'])
-        self.do_request('list_roles', expected_status=exceptions.Forbidden)
-
     def test_identity_get_domain_role(self):
         # user cannot get domain role in own domain
-        role = self.admin_roles_client.create_role(**self.role())['role']
+        role = self.admin_roles_client.create_role(
+            **self.role(domain_id=self.own_domain))['role']
         self.addCleanup(self.admin_roles_client.delete_role, role['id'])
         self.do_request('show_role', expected_status=exceptions.Forbidden,
                         role_id=role['id'])
@@ -369,6 +353,23 @@ class DomainMemberTests(DomainAdminTests):
 
     credentials = ['domain_member', 'system_admin']
 
+    def test_identity_get_role(self):
+        # user cannot get role
+        role = self.admin_roles_client.create_role(
+            **self.role())['role']
+        self.addCleanup(self.admin_roles_client.delete_role, role['id'])
+        self.do_request('show_role', expected_status=exceptions.Forbidden,
+                        role_id=role['id'])
+        # user gets a 404 for nonexistent role
+        self.do_request('show_role', expected_status=exceptions.NotFound,
+                        role_id=data_utils.rand_uuid_hex())
+
+    def test_identity_list_roles(self):
+        # user cannot list roles
+        role = self.admin_roles_client.create_role(**self.role())['role']
+        self.addCleanup(self.admin_roles_client.delete_role, role['id'])
+        self.do_request('list_roles', expected_status=exceptions.Forbidden)
+
 
 class DomainReaderTests(DomainMemberTests):
 
@@ -380,7 +381,7 @@ class ProjectAdminTests(SystemAdminTests):
     credentials = ['project_admin', 'system_admin']
 
 
-class ProjectMemberTests(DomainReaderTests):
+class ProjectMemberTests(DomainMemberTests):
 
     credentials = ['project_member', 'system_admin']
 

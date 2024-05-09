@@ -1,6 +1,7 @@
 - job:
     name: keystone-protection-functional
     parent: keystone-dsvm-py3-functional
+    voting: false
     vars:
       tempest_test_regex: 'keystone_tempest_plugin.tests.rbac'
       devstack_localrc:
@@ -44,15 +45,21 @@
         - keystone-dsvm-py3-functional-federation-ubuntu-focal:
             voting: false
         - keystone-dsvm-py3-functional-federation-ubuntu-focal-k2k
+        - keystone-dsvm-py3-functional-2024-1
         - keystone-dsvm-py3-functional-2023-2
         - keystone-dsvm-py3-functional-2023-1
-        - keystone-dsvm-py3-functional-zed
         - keystone-protection-functional
     gate:
       jobs:
         - keystone-dsvm-py3-functional
         - keystone-dsvm-py3-functional-federation-ubuntu-focal-k2k
         - keystone-protection-functional
+
+- job:
+    name: keystone-dsvm-py3-functional-2024-1
+    parent: keystone-dsvm-py3-functional
+    nodeset: openstack-single-node-jammy
+    override-checkout: stable/2024.1
 
 - job:
     name: keystone-dsvm-py3-functional-2023-2
@@ -65,9 +72,3 @@
     parent: keystone-dsvm-py3-functional
     nodeset: openstack-single-node-jammy
     override-checkout: stable/2023.1
-
-- job:
-    name: keystone-dsvm-py3-functional-zed
-    parent: keystone-dsvm-py3-functional
-    nodeset: openstack-single-node-focal
-    override-checkout: stable/zed

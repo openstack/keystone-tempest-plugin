@@ -42,9 +42,9 @@
     check:
       jobs:
         - keystone-dsvm-py3-functional
-        - keystone-dsvm-py3-functional-federation-ubuntu-focal:
+        - keystone-dsvm-py3-functional-federation-ubuntu-jammy:
             voting: false
-        - keystone-dsvm-py3-functional-federation-ubuntu-focal-k2k
+        - keystone-dsvm-py3-functional-federation-ubuntu-jammy-k2k
         - keystone-dsvm-py3-functional-2024-1
         - keystone-dsvm-py3-functional-2023-2
         - keystone-dsvm-py3-functional-2023-1
@@ -52,7 +52,7 @@
     gate:
       jobs:
         - keystone-dsvm-py3-functional
-        - keystone-dsvm-py3-functional-federation-ubuntu-focal-k2k
+        - keystone-dsvm-py3-functional-federation-ubuntu-jammy-k2k
         - keystone-protection-functional
 
 - job:

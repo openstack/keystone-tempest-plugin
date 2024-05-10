@@ -339,108 +339,14 @@ class SystemReaderTests(SystemMemberTests):
     credentials = ['system_reader', 'system_admin']
 
 
-class DomainAdminTests(IdentityV3RbacCredentialTest, base.BaseIdentityTest):
+class DomainAdminTests(SystemAdminTests):
 
     credentials = ['domain_admin', 'system_admin']
 
-    def test_identity_create_credential(self):
-        # domain admins cannot create credentials
-        user_id = self.persona.credentials.user_id
-        for u in [user_id, self.test_user_1, self.test_user_2]:
-            self.do_request(
-                'create_credential',
-                expected_status=exceptions.Forbidden,
-                **self.credential(user_id=u))
 
-    def test_identity_get_credential(self):
-        # domain admins cannot get credentials
-        user_id = self.persona.credentials.user_id
-        for u in [user_id, self.test_user_1, self.test_user_2]:
-            cred = self.admin_credentials_client.create_credential(
-                **self.credential(user_id=u))['credential']
-            self.addCleanup(
-                self.admin_credentials_client.delete_credential, cred['id'])
-            self.do_request(
-                'show_credential',
-                expected_status=exceptions.Forbidden,
-                credential_id=cred['id'])
-        # non-existent credential is Forbidden
-        self.do_request(
-            'show_credential',
-            expected_status=exceptions.Forbidden,
-            credential_id=data_utils.rand_uuid_hex())
-
-    def test_identity_list_credentials(self):
-        # domain admins cannot list credentials
-        user_id = self.persona.credentials.user_id
-        for u in [user_id, self.test_user_1, self.test_user_2]:
-            cred = self.admin_credentials_client.create_credential(
-                **self.credential(user_id=u))['credential']
-            self.addCleanup(
-                self.admin_credentials_client.delete_credential, cred['id'])
-            self.do_request(
-                'list_credentials',
-                expected_status=exceptions.Forbidden)
-
-    def test_identity_update_credential(self):
-        # domain admins cannot update credentials
-        user_id = self.persona.credentials.user_id
-        for u in [user_id, self.test_user_1, self.test_user_2]:
-            cred = self.credential(user_id=u)
-            resp = self.admin_credentials_client.create_credential(
-                **cred)['credential']
-            self.addCleanup(
-                self.admin_credentials_client.delete_credential, resp['id'])
-            cred['blob'] = data_utils.rand_uuid_hex()
-            self.do_request(
-                'update_credential',
-                expected_status=exceptions.Forbidden,
-                credential_id=resp['id'], **cred)
-        # non-existent credential is Forbidden
-        self.do_request(
-            'update_credential',
-            expected_status=exceptions.Forbidden,
-            credential_id=data_utils.rand_uuid_hex(),
-            **self.credential(user_id=user_id))
-
-    def test_identity_delete_credential(self):
-        # domain admins cannot delete credentials
-        user_id = self.persona.credentials.user_id
-        for u in [user_id, self.test_user_1, self.test_user_2]:
-            cred = self.credential(user_id=u)
-            resp = self.admin_credentials_client.create_credential(
-                **cred)['credential']
-            self.addCleanup(
-                self.admin_credentials_client.delete_credential, resp['id'])
-            self.do_request(
-                'delete_credential',
-                expected_status=exceptions.Forbidden,
-                credential_id=resp['id'])
-        # non-existent credential is Forbidden
-        self.do_request(
-            'delete_credential',
-            expected_status=exceptions.Forbidden,
-            credential_id=data_utils.rand_uuid_hex())
-
-
-class DomainMemberTests(DomainAdminTests):
+class DomainMemberTests(SystemReaderTests):
 
     credentials = ['domain_member', 'system_admin']
-
-
-class DomainReaderTests(DomainAdminTests):
-
-    credentials = ['domain_reader', 'system_admin']
-
-
-class ProjectAdminTests(SystemAdminTests):
-
-    credentials = ['project_admin', 'system_admin']
-
-
-class ProjectMemberTests(SystemReaderTests):
-
-    credentials = ['project_member', 'system_admin']
 
     def test_identity_get_credential(self):
         # user can get their own credential
@@ -483,6 +389,21 @@ class ProjectMemberTests(SystemReaderTests):
                 self.admin_credentials_client.delete_credential, cred['id'])
             resp = self.do_request('list_credentials')['credentials']
             self.assertNotIn(cred['id'], [c['id'] for c in resp])
+
+
+class DomainReaderTests(DomainMemberTests):
+
+    credentials = ['domain_reader', 'system_admin']
+
+
+class ProjectAdminTests(SystemAdminTests):
+
+    credentials = ['project_admin', 'system_admin']
+
+
+class ProjectMemberTests(DomainReaderTests):
+
+    credentials = ['project_member', 'system_admin']
 
 
 class ProjectReaderTests(ProjectMemberTests):

@@ -178,8 +178,15 @@ class DomainAdminTests(SystemReaderTests, base.BaseIdentityTest):
 
     def test_identity_list_domains(self):
         domain_id = self.persona.credentials.domain_id
+        other_domain_id = self.admin_domains_client.create_domain(
+            name=data_utils.rand_name())['domain']['id']
+        self.addCleanup(self.admin_domains_client.delete_domain,
+                        other_domain_id)
+        self.addCleanup(self.admin_domains_client.update_domain,
+                        domain_id=other_domain_id, enabled=False)
         resp = self.do_request('list_domains')
         self.assertIn(domain_id, [d['id'] for d in resp['domains']])
+        self.assertNotIn(other_domain_id, [d['id'] for d in resp['domains']])
 
 
 class DomainMemberTests(DomainAdminTests, base.BaseIdentityTest):

@@ -31,6 +31,7 @@ class IdentityV3RbacDomainTests(rbac_base.IdentityV3RbacBaseTests,
         cls.client = cls.persona.domains_client
         admin_client = cls.os_system_admin
         cls.admin_domains_client = admin_client.domains_client
+        cls.own_domain = cls.persona.credentials.domain_id
 
     @abc.abstractmethod
     def test_identity_create_domain(self):
@@ -189,7 +190,9 @@ class DomainAdminTests(SystemReaderTests, base.BaseIdentityTest):
         self.assertNotIn(other_domain_id, [d['id'] for d in resp['domains']])
 
 
-class DomainMemberTests(DomainAdminTests, base.BaseIdentityTest):
+class DomainManagerTests(DomainAdminTests, base.BaseIdentityTest):
+
+    credentials = ['domain_manager', 'system_admin']
 
     def test_identity_get_domain(self):
         domain_id = self.admin_domains_client.create_domain(
@@ -197,11 +200,17 @@ class DomainMemberTests(DomainAdminTests, base.BaseIdentityTest):
         self.addCleanup(self.admin_domains_client.delete_domain, domain_id)
         self.addCleanup(self.admin_domains_client.update_domain,
                         domain_id=domain_id, enabled=False)
+        # user can get own domain
+        self.do_request('show_domain', domain_id=self.own_domain)
+        # user gets a 403 for foreign domain
         self.do_request('show_domain', expected_status=exceptions.Forbidden,
                         domain_id=domain_id)
         # user gets a 403 for nonexistent domain
         self.do_request('show_domain', expected_status=exceptions.Forbidden,
                         domain_id=data_utils.rand_uuid_hex())
+
+
+class DomainMemberTests(DomainManagerTests):
 
     credentials = ['domain_member', 'system_admin']
 
@@ -216,9 +225,9 @@ class ProjectAdminTests(SystemAdminTests):
     credentials = ['project_admin', 'system_admin']
 
 
-class ProjectMemberTests(DomainReaderTests):
+class ProjectManagerTests(DomainReaderTests):
 
-    credentials = ['project_member', 'system_admin']
+    credentials = ['project_manager', 'system_admin']
 
     def test_identity_list_domains(self):
         domain_id = self.admin_domains_client.create_domain(
@@ -228,6 +237,11 @@ class ProjectMemberTests(DomainReaderTests):
                         domain_id=domain_id, enabled=False)
         self.do_request('list_domains',
                         expected_status=exceptions.Forbidden)
+
+
+class ProjectMemberTests(ProjectManagerTests):
+
+    credentials = ['project_member', 'system_admin']
 
 
 class ProjectReaderTests(ProjectMemberTests):

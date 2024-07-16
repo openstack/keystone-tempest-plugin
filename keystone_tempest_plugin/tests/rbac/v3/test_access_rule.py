@@ -358,7 +358,12 @@ class DomainAdminTests(IdentityV3RbacAccessRuleTest, base.BaseIdentityTest):
             access_rule_id=data_utils.rand_uuid_hex())
 
 
-class DomainMemberTests(DomainAdminTests):
+class DomainManagerTests(DomainAdminTests):
+
+    credentials = ['domain_manager', 'system_admin']
+
+
+class DomainMemberTests(DomainManagerTests):
 
     credentials = ['domain_member', 'system_admin']
 
@@ -477,7 +482,12 @@ class ProjectAdminTests(IdentityV3RbacAccessRuleTest, base.BaseIdentityTest):
             access_rule_id=data_utils.rand_uuid_hex())
 
 
-class ProjectMemberTests(ProjectAdminTests):
+class ProjectManagerTests(ProjectAdminTests):
+
+    credentials = ['project_manager', 'system_admin']
+
+
+class ProjectMemberTests(ProjectManagerTests):
 
     credentials = ['project_member', 'system_admin']
 

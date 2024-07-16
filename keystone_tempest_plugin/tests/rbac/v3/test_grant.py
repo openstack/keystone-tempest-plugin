@@ -44,6 +44,8 @@ class IdentityV3RbacGrantTest(rbac_base.IdentityV3RbacBaseTests,
             name=data_utils.rand_name('role'))['role']['id']
         cls.addClassResourceCleanup(
             cls.admin_client.roles_v3_client.delete_role, cls.role_id)
+        cls.member_role_id = cls.admin_client.roles_v3_client.list_roles(
+            name='member')['roles'][0]['id']
 
         # own domain - if system or project user, this will be the user's
         # namespace and isn't applicable for RBAC testing
@@ -2747,9 +2749,9 @@ class DomainAdminTests(IdentityV3RbacGrantTest, base.BaseIdentityTest):
             role_id=self.role_id)
 
 
-class DomainMemberTests(DomainAdminTests):
+class DomainManagerTests(DomainAdminTests):
 
-    credentials = ['domain_member', 'system_admin']
+    credentials = ['domain_manager', 'system_admin']
 
     def test_identity_check_grant(self):
         ###################################################
@@ -3228,6 +3230,1369 @@ class DomainMemberTests(DomainAdminTests):
         ###################################################
         # RESOURCE IN OWN DOMAIN - IDENTITY IN OWN DOMAIN #
         ###################################################
+        # global role permitted for domain managers,
+        # project in own domain, user in own domain
+        self.do_request(
+            'create_user_role_on_project',
+            expected_status=204,
+            project_id=self.project_in_domain,
+            user_id=self.user_in_domain,
+            role_id=self.member_role_id)
+        self.addCleanup(
+            self.admin_roles_client.delete_role_from_user_on_project,
+            project_id=self.project_in_domain,
+            user_id=self.user_in_domain,
+            role_id=self.member_role_id)
+        # global role permitted for domain managers,
+        # project in own domain, group in own domain
+        self.do_request(
+            'create_group_role_on_project',
+            expected_status=204,
+            project_id=self.project_in_domain,
+            group_id=self.group_in_domain,
+            role_id=self.member_role_id)
+        self.addCleanup(
+            self.admin_roles_client.delete_role_from_group_on_project,
+            project_id=self.project_in_domain,
+            group_id=self.group_in_domain,
+            role_id=self.member_role_id)
+        # global role permitted for domain managers,
+        # own domain, user in own domain
+        self.do_request(
+            'create_user_role_on_domain',
+            expected_status=204,
+            domain_id=self.own_domain,
+            user_id=self.user_in_domain,
+            role_id=self.member_role_id)
+        self.addCleanup(
+            self.admin_roles_client.delete_role_from_user_on_domain,
+            domain_id=self.own_domain,
+            user_id=self.user_in_domain,
+            role_id=self.member_role_id)
+        # global role permitted for domain managers,
+        # own domain, group in own domain
+        self.do_request(
+            'create_group_role_on_domain',
+            expected_status=204,
+            domain_id=self.own_domain,
+            group_id=self.group_in_domain,
+            role_id=self.member_role_id)
+        self.addCleanup(
+            self.admin_roles_client.delete_role_from_group_on_domain,
+            domain_id=self.own_domain,
+            group_id=self.group_in_domain,
+            role_id=self.member_role_id)
+        # global role not permitted for domain managers,
+        # project in own domain, user in own domain
+        self.do_request(
+            'create_user_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_id)
+        # global role not permitted for domain managers,
+        # project in own domain, group in own domain
+        self.do_request(
+            'create_group_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_id)
+        # global role not permitted for domain managers,
+        # own domain, user in own domain
+        self.do_request(
+            'create_user_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_id)
+        # global role not permitted for domain managers,
+        # own domain, group in own domain
+        self.do_request(
+            'create_group_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_id)
+        # role in own domain, project in own domain, user in own domain
+        self.do_request(
+            'create_user_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, project in own domain, group in own domain
+        self.do_request(
+            'create_group_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, own domain, user in own domain
+        self.do_request(
+            'create_user_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, own domain, group in own domain
+        self.do_request(
+            'create_group_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_own_domain)
+        # role in other domain, project in own domain, user in own domain
+        self.do_request(
+            'create_user_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, project in own domain, group in own domain
+        self.do_request(
+            'create_group_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, own domain, user in own domain
+        self.do_request(
+            'create_user_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, own domain, group in own domain
+        self.do_request(
+            'create_group_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_other_domain)
+        #####################################################
+        # RESOURCE IN OWN DOMAIN - IDENTITY IN OTHER DOMAIN #
+        #####################################################
+        # global role, project in own domain, user in other domain
+        self.do_request(
+            'create_user_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            user_id=self.user_other_domain,
+            role_id=self.member_role_id)
+        # global role, project in own domain, group in other domain
+        self.do_request(
+            'create_group_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            group_id=self.group_other_domain,
+            role_id=self.member_role_id)
+        # global role, own domain, user in other domain
+        self.do_request(
+            'create_user_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            user_id=self.user_other_domain,
+            role_id=self.member_role_id)
+        # global role, own domain, group in other domain
+        self.do_request(
+            'create_group_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            group_id=self.group_other_domain,
+            role_id=self.member_role_id)
+        # role in own domain, project in own domain, user in other domain
+        self.do_request(
+            'create_user_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, project in own domain, group in other domain
+        self.do_request(
+            'create_group_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, own domain, user in other domain
+        self.do_request(
+            'create_user_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, own domain, group in other domain
+        self.do_request(
+            'create_group_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_own_domain)
+        # role in other domain, project in own domain, user in other domain
+        self.do_request(
+            'create_user_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, project in own domain, group in other domain
+        self.do_request(
+            'create_group_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, own domain, user in other domain
+        self.do_request(
+            'create_user_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_other_domain)
+        self.do_request(
+            'create_group_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_other_domain)
+        #####################################################
+        # RESOURCE IN OTHER DOMAIN - IDENTITY IN OWN DOMAIN #
+        #####################################################
+        # global role, project in other domain, user in own domain
+        self.do_request(
+            'create_user_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            user_id=self.user_in_domain,
+            role_id=self.member_role_id)
+        # global role, project in other domain, group in own domain
+        self.do_request(
+            'create_group_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            group_id=self.group_in_domain,
+            role_id=self.member_role_id)
+        # global role, other domain, user in own domain
+        self.do_request(
+            'create_user_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            user_id=self.user_in_domain,
+            role_id=self.member_role_id)
+        # global role, other domain, group in own domain
+        self.do_request(
+            'create_group_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            group_id=self.group_in_domain,
+            role_id=self.member_role_id)
+        # role in own domain, project in other domain, user in own domain
+        self.do_request(
+            'create_user_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, project in other domain, group in own domain
+        self.do_request(
+            'create_group_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, other domain, user in own domain
+        self.do_request(
+            'create_user_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, other domain, group in own domain
+        self.do_request(
+            'create_group_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_own_domain)
+        # role in other domain, project in other domain, user in own domain
+        self.do_request(
+            'create_user_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, project in other domain, group in own domain
+        self.do_request(
+            'create_group_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, other domain, user in own domain
+        self.do_request(
+            'create_user_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, other domain, group in own domain
+        self.do_request(
+            'create_group_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_other_domain)
+        #######################################################
+        # RESOURCE IN OTHER DOMAIN - IDENTITY IN OTHER DOMAIN #
+        #######################################################
+        # global role, project in other domain, user in other domain
+        self.do_request(
+            'create_user_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            user_id=self.user_other_domain,
+            role_id=self.member_role_id)
+        # global role, project in other domain, group in other domain
+        self.do_request(
+            'create_group_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            group_id=self.group_other_domain,
+            role_id=self.member_role_id)
+        # global role, other domain, user in other domain
+        self.do_request(
+            'create_user_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            user_id=self.user_other_domain,
+            role_id=self.member_role_id)
+        # global role, other domain, group in other domain
+        self.do_request(
+            'create_group_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            group_id=self.group_other_domain,
+            role_id=self.member_role_id)
+        # role in own domain, project in other domain, user in other domain
+        self.do_request(
+            'create_user_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, project in other domain, group in other domain
+        self.do_request(
+            'create_group_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, other domain, user in other domain
+        self.do_request(
+            'create_user_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, other domain, group in other domain
+        self.do_request(
+            'create_group_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_own_domain)
+        # role in other domain, project in other domain, user in other domain
+        self.do_request(
+            'create_user_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, project in other domain, group in other domain
+        self.do_request(
+            'create_group_role_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, other domain, user in other domain
+        self.do_request(
+            'create_user_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, other domain, group in other domain
+        self.do_request(
+            'create_group_role_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_other_domain)
+
+    def test_identity_revoke_grant(self):
+        ###################################################
+        # RESOURCE IN OWN DOMAIN - IDENTITY IN OWN DOMAIN #
+        ###################################################
+        # global role permitted for domain managers,
+        # project in own domain, user in own domain
+        self.admin_roles_client.create_user_role_on_project(
+            project_id=self.project_in_domain,
+            user_id=self.user_in_domain,
+            role_id=self.member_role_id)
+        self.do_request(
+            'delete_role_from_user_on_project',
+            expected_status=204,
+            project_id=self.project_in_domain,
+            user_id=self.user_in_domain,
+            role_id=self.member_role_id)
+        # global role permitted for domain managers,
+        # project in own domain, group in own domain
+        self.admin_roles_client.create_group_role_on_project(
+            project_id=self.project_in_domain,
+            group_id=self.group_in_domain,
+            role_id=self.member_role_id)
+        self.do_request(
+            'delete_role_from_group_on_project',
+            expected_status=204,
+            project_id=self.project_in_domain,
+            group_id=self.group_in_domain,
+            role_id=self.member_role_id)
+        # global role permitted for domain managers,
+        # own domain, user in own domain
+        self.admin_roles_client.create_user_role_on_domain(
+            domain_id=self.own_domain,
+            user_id=self.user_in_domain,
+            role_id=self.member_role_id)
+        self.do_request(
+            'delete_role_from_user_on_domain',
+            expected_status=204,
+            domain_id=self.own_domain,
+            user_id=self.user_in_domain,
+            role_id=self.member_role_id)
+        # global role permitted for domain managers,
+        # own domain, group in own domain
+        self.admin_roles_client.create_group_role_on_domain(
+            domain_id=self.own_domain,
+            group_id=self.group_in_domain,
+            role_id=self.member_role_id)
+        self.do_request(
+            'delete_role_from_group_on_domain',
+            expected_status=204,
+            domain_id=self.own_domain,
+            group_id=self.group_in_domain,
+            role_id=self.member_role_id)
+        # global role not permitted for domain managers,
+        # project in own domain, user in own domain
+        self.admin_roles_client.create_user_role_on_project(
+            project_id=self.project_in_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_id)
+        self.do_request(
+            'delete_role_from_user_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_id)
+        # global role not permitted for domain managers,
+        # project in own domain, group in own domain
+        self.admin_roles_client.create_group_role_on_project(
+            project_id=self.project_in_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_id)
+        self.do_request(
+            'delete_role_from_group_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_id)
+        # global role not permitted for domain managers,
+        # own domain, user in own domain
+        self.admin_roles_client.create_user_role_on_domain(
+            domain_id=self.own_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_id)
+        self.do_request(
+            'delete_role_from_user_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_id)
+        # global role not permitted for domain managers,
+        # own domain, group in own domain
+        self.admin_roles_client.create_group_role_on_domain(
+            domain_id=self.own_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_id)
+        self.do_request(
+            'delete_role_from_group_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_id)
+        # role in own domain, project in own domain, user in own domain
+        self.admin_roles_client.create_user_role_on_project(
+            project_id=self.project_in_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_own_domain)
+        self.do_request(
+            'delete_role_from_user_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, project in own domain, group in own domain
+        self.admin_roles_client.create_group_role_on_project(
+            project_id=self.project_in_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_own_domain)
+        self.do_request(
+            'delete_role_from_group_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, own domain, user in own domain
+        self.admin_roles_client.create_user_role_on_domain(
+            domain_id=self.own_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_own_domain)
+        self.do_request(
+            'delete_role_from_user_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, own domain, group in own domain
+        self.admin_roles_client.create_group_role_on_domain(
+            domain_id=self.own_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_own_domain)
+        self.do_request(
+            'delete_role_from_group_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_own_domain)
+        # role in other domain, project in own domain, user in own domain
+        # role assignment does not exist, should 403
+        self.do_request(
+            'delete_role_from_user_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, project in own domain, group in own domain
+        # role assignment does not exist, should 403
+        self.do_request(
+            'delete_role_from_group_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, own domain, user in own domain
+        # role assignment does not exist, should 403
+        self.do_request(
+            'delete_role_from_user_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, own domain, group in own domain
+        # role assignment does not exist, should 403
+        self.do_request(
+            'delete_role_from_group_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_other_domain)
+        #####################################################
+        # RESOURCE IN OWN DOMAIN - IDENTITY IN OTHER DOMAIN #
+        #####################################################
+        # global role, project in own domain, user in other domain
+        self.admin_roles_client.create_user_role_on_project(
+            project_id=self.project_in_domain,
+            user_id=self.user_other_domain,
+            role_id=self.member_role_id)
+        self.do_request(
+            'delete_role_from_user_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            user_id=self.user_other_domain,
+            role_id=self.member_role_id)
+        # global role, project in own domain, group in other domain
+        self.admin_roles_client.create_group_role_on_project(
+            project_id=self.project_in_domain,
+            group_id=self.group_other_domain,
+            role_id=self.member_role_id)
+        self.do_request(
+            'delete_role_from_group_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            group_id=self.group_other_domain,
+            role_id=self.member_role_id)
+        # global role, own domain, user in other domain
+        self.admin_roles_client.create_user_role_on_domain(
+            domain_id=self.own_domain,
+            user_id=self.user_other_domain,
+            role_id=self.member_role_id)
+        self.do_request(
+            'delete_role_from_user_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            user_id=self.user_other_domain,
+            role_id=self.member_role_id)
+        # global role, own domain, group in other domain
+        self.admin_roles_client.create_group_role_on_domain(
+            domain_id=self.own_domain,
+            group_id=self.group_other_domain,
+            role_id=self.member_role_id)
+        self.do_request(
+            'delete_role_from_group_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            group_id=self.group_other_domain,
+            role_id=self.member_role_id)
+        # role in own domain, project in own domain, user in other domain
+        self.admin_roles_client.create_user_role_on_project(
+            project_id=self.project_in_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_own_domain)
+        self.do_request(
+            'delete_role_from_user_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, project in own domain, group in other domain
+        self.admin_roles_client.create_group_role_on_project(
+            project_id=self.project_in_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_own_domain)
+        self.do_request(
+            'delete_role_from_group_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, own domain, user in other domain
+        self.admin_roles_client.create_user_role_on_domain(
+            domain_id=self.own_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_own_domain)
+        self.do_request(
+            'delete_role_from_user_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, own domain, group in other domain
+        self.admin_roles_client.create_group_role_on_domain(
+            domain_id=self.own_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_own_domain)
+        self.do_request(
+            'delete_role_from_group_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_own_domain)
+        # role in other domain, project in own domain, user in other domain
+        # role assignment does not exist, should 403
+        self.do_request(
+            'delete_role_from_user_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, project in own domain, group in other domain
+        # role assignment does not exist, should 403
+        self.do_request(
+            'delete_role_from_group_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, own domain, user in other domain
+        # role assignment does not exist, should 403
+        self.do_request(
+            'delete_role_from_user_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, own domain, group in other domain
+        # role assignment does not exist, should 403
+        self.do_request(
+            'delete_role_from_group_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_other_domain)
+        #####################################################
+        # RESOURCE IN OTHER DOMAIN - IDENTITY IN OWN DOMAIN #
+        #####################################################
+        # global role, project in other domain, user in own domain
+        self.admin_roles_client.create_user_role_on_project(
+            project_id=self.project_other_domain,
+            user_id=self.user_in_domain,
+            role_id=self.member_role_id)
+        self.do_request(
+            'delete_role_from_user_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            user_id=self.user_in_domain,
+            role_id=self.member_role_id)
+        # global role, project in other domain, group in own domain
+        self.admin_roles_client.create_group_role_on_project(
+            project_id=self.project_other_domain,
+            group_id=self.group_in_domain,
+            role_id=self.member_role_id)
+        self.do_request(
+            'delete_role_from_group_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            group_id=self.group_in_domain,
+            role_id=self.member_role_id)
+        # global role, other domain, user in own domain
+        self.admin_roles_client.create_user_role_on_domain(
+            domain_id=self.other_domain,
+            user_id=self.user_in_domain,
+            role_id=self.member_role_id)
+        self.do_request(
+            'delete_role_from_user_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            user_id=self.user_in_domain,
+            role_id=self.member_role_id)
+        # global role, other domain, group in own domain
+        self.admin_roles_client.create_group_role_on_domain(
+            domain_id=self.other_domain,
+            group_id=self.group_in_domain,
+            role_id=self.member_role_id)
+        self.do_request(
+            'delete_role_from_group_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            group_id=self.group_in_domain,
+            role_id=self.member_role_id)
+        # role in own domain, project in other domain, user in own domain
+        # role assignment does not exist, should 403
+        self.do_request(
+            'delete_role_from_user_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, project in other domain, group in own domain
+        # role assignment does not exist, should 403
+        self.do_request(
+            'delete_role_from_group_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, other domain, user in own domain
+        # role assignment does not exist, should 403
+        self.do_request(
+            'delete_role_from_user_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, other domain, group in own domain
+        # role assignment does not exist, should 403
+        self.do_request(
+            'delete_role_from_group_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_own_domain)
+        # role in other domain, project in other domain, user in own domain
+        self.admin_roles_client.create_user_role_on_project(
+            project_id=self.project_other_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_other_domain)
+        self.do_request(
+            'delete_role_from_user_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, project in other domain, group in own domain
+        self.admin_roles_client.create_group_role_on_project(
+            project_id=self.project_other_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_other_domain)
+        self.do_request(
+            'delete_role_from_group_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, other domain, user in own domain
+        self.admin_roles_client.create_user_role_on_domain(
+            domain_id=self.other_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_other_domain)
+        self.do_request(
+            'delete_role_from_user_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, other domain, group in own domain
+        self.admin_roles_client.create_group_role_on_domain(
+            domain_id=self.other_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_other_domain)
+        self.do_request(
+            'delete_role_from_group_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_other_domain)
+        #######################################################
+        # RESOURCE IN OTHER DOMAIN - IDENTITY IN OTHER DOMAIN #
+        #######################################################
+        # global role, project in other domain, user in other domain
+        self.admin_roles_client.create_user_role_on_project(
+            project_id=self.project_other_domain,
+            user_id=self.user_other_domain,
+            role_id=self.member_role_id)
+        self.do_request(
+            'delete_role_from_user_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            user_id=self.user_other_domain,
+            role_id=self.member_role_id)
+        # global role, project in other domain, group in other domain
+        self.admin_roles_client.create_group_role_on_project(
+            project_id=self.project_other_domain,
+            group_id=self.group_other_domain,
+            role_id=self.member_role_id)
+        self.do_request(
+            'delete_role_from_group_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            group_id=self.group_other_domain,
+            role_id=self.member_role_id)
+        # global role, other domain, user in other domain
+        self.admin_roles_client.create_user_role_on_domain(
+            domain_id=self.other_domain,
+            user_id=self.user_other_domain,
+            role_id=self.member_role_id)
+        self.do_request(
+            'delete_role_from_user_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            user_id=self.user_other_domain,
+            role_id=self.member_role_id)
+        # global role, other domain, group in other domain
+        self.admin_roles_client.create_group_role_on_domain(
+            domain_id=self.other_domain,
+            group_id=self.group_other_domain,
+            role_id=self.member_role_id)
+        self.do_request(
+            'delete_role_from_group_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            group_id=self.group_other_domain,
+            role_id=self.member_role_id)
+        # role in own domain, project in other domain, user in other domain
+        # role assignment does not exist, should 403
+        self.do_request(
+            'delete_role_from_user_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, project in other domain, group in other domain
+        # role assignment does not exist, should 403
+        self.do_request(
+            'delete_role_from_group_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, other domain, user in other domain
+        # role assignment does not exist, should 403
+        self.do_request(
+            'delete_role_from_user_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, other domain, group in other domain
+        # role assignment does not exist, should 403
+        self.do_request(
+            'delete_role_from_group_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_own_domain)
+        # role in other domain, project in other domain, user in other domain
+        self.admin_roles_client.create_user_role_on_project(
+            project_id=self.project_other_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_other_domain)
+        self.do_request(
+            'delete_role_from_user_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, project in other domain, group in other domain
+        self.admin_roles_client.create_group_role_on_project(
+            project_id=self.project_other_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_other_domain)
+        self.do_request(
+            'delete_role_from_group_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, other domain, user in other domain
+        self.admin_roles_client.create_user_role_on_domain(
+            domain_id=self.other_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_other_domain)
+        self.do_request(
+            'delete_role_from_user_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, other domain, group in other domain
+        self.admin_roles_client.create_group_role_on_domain(
+            domain_id=self.other_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_other_domain)
+        self.do_request(
+            'delete_role_from_group_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_other_domain)
+
+    def test_identity_create_system_grant_for_user(self):
+        self.do_request(
+            'create_user_role_on_system',
+            expected_status=exceptions.Forbidden,
+            user_id=self.user_in_domain,
+            role_id=self.member_role_id)
+        self.do_request(
+            'create_user_role_on_system',
+            expected_status=exceptions.Forbidden,
+            user_id=self.user_other_domain,
+            role_id=self.member_role_id)
+
+    def test_identity_revoke_system_grant_for_user(self):
+        # group in own domain
+        self.admin_roles_client.create_group_role_on_system(
+            group_id=self.group_in_domain,
+            role_id=self.member_role_id)
+        self.addCleanup(
+            self.admin_roles_client.delete_role_from_group_on_system,
+            group_id=self.group_in_domain,
+            role_id=self.member_role_id)
+        self.do_request(
+            'delete_role_from_group_on_system',
+            expected_status=exceptions.Forbidden,
+            group_id=self.group_in_domain,
+            role_id=self.member_role_id)
+        # group in other domain
+        self.admin_roles_client.create_group_role_on_system(
+            group_id=self.group_other_domain,
+            role_id=self.member_role_id)
+        self.addCleanup(
+            self.admin_roles_client.delete_role_from_group_on_system,
+            group_id=self.group_other_domain,
+            role_id=self.member_role_id)
+        self.do_request(
+            'delete_role_from_group_on_system',
+            expected_status=exceptions.Forbidden,
+            group_id=self.group_other_domain,
+            role_id=self.member_role_id)
+
+
+class DomainMemberTests(DomainManagerTests):
+
+    credentials = ['domain_member', 'system_admin']
+
+    def test_identity_check_grant(self):
+        ###################################################
+        # RESOURCE IN OWN DOMAIN - IDENTITY IN OWN DOMAIN #
+        ###################################################
+        # global role, project in own domain, user in own domain
+        self.do_request(
+            'check_user_role_existence_on_project',
+            expected_status=204,
+            project_id=self.project_in_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_id)
+        # global role, project in own domain, group in own domain
+        self.do_request(
+            'check_role_from_group_on_project_existence',
+            expected_status=204,
+            project_id=self.project_in_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_id)
+        # global role, own domain, user in own domain
+        self.do_request(
+            'check_user_role_existence_on_domain',
+            expected_status=204,
+            domain_id=self.own_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_id)
+        # global role, own domain, group in own domain
+        self.do_request(
+            'check_role_from_group_on_domain_existence',
+            expected_status=204,
+            domain_id=self.own_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_id)
+        # role in own domain, project in own domain, user in own domain
+        self.do_request(
+            'check_user_role_existence_on_project',
+            expected_status=204,
+            project_id=self.project_in_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, project in own domain, group in own domain
+        self.do_request(
+            'check_role_from_group_on_project_existence',
+            expected_status=204,
+            project_id=self.project_in_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, domain in own domain, user in own domain
+        self.do_request(
+            'check_user_role_existence_on_domain',
+            expected_status=204,
+            domain_id=self.own_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, domain in own domain, group in own domain
+        self.do_request(
+            'check_role_from_group_on_domain_existence',
+            expected_status=204,
+            domain_id=self.own_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_own_domain)
+        # role in other domain, project in own domain, user in own domain
+        # (none created, should 403)
+        self.do_request(
+            'check_user_role_existence_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, project in own domain, group in own domain
+        # (none created, should 403)
+        self.do_request(
+            'check_role_from_group_on_project_existence',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, domain in own domain, user in own domain
+        # (none created, should 403)
+        self.do_request(
+            'check_user_role_existence_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, domain in own domain, group in own domain
+        # (none created, should 403)
+        self.do_request(
+            'check_role_from_group_on_domain_existence',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_other_domain)
+        #####################################################
+        # RESOURCE IN OWN DOMAIN - IDENTITY IN OTHER DOMAIN #
+        #####################################################
+        # global role, project in own domain, user in other domain
+        self.do_request(
+            'check_user_role_existence_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_id)
+        # global role, project in own domain, group in other domain
+        self.do_request(
+            'check_role_from_group_on_project_existence',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_id)
+        # global role, own domain, user in other domain
+        self.do_request(
+            'check_user_role_existence_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_id)
+        # global role, own domain, group in other domain
+        self.do_request(
+            'check_role_from_group_on_domain_existence',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_id)
+        # role in own domain, project in own domain, user in other domain
+        self.do_request(
+            'check_user_role_existence_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, project in own domain, group in other domain
+        self.do_request(
+            'check_role_from_group_on_project_existence',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, domain in own domain, user in other domain
+        self.do_request(
+            'check_user_role_existence_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, domain in own domain, group in other domain
+        self.do_request(
+            'check_role_from_group_on_domain_existence',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_own_domain)
+        # role in other domain, project in own domain, user in other domain
+        # (none created, should 403)
+        self.do_request(
+            'check_user_role_existence_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, project in own domain, group in other domain
+        # (none created, should 403)
+        self.do_request(
+            'check_role_from_group_on_project_existence',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_in_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, domain in own domain, user in other domain
+        # (none created, should 403)
+        self.do_request(
+            'check_user_role_existence_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, domain in own domain, group in other domain
+        # (none created, should 403)
+        self.do_request(
+            'check_role_from_group_on_domain_existence',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.own_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_other_domain)
+
+        #####################################################
+        # RESOURCE IN OTHER DOMAIN - IDENTITY IN OWN DOMAIN #
+        #####################################################
+        # global role, project in other domain, user in own domain
+        self.do_request(
+            'check_user_role_existence_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_id)
+        # global role, project in other domain, group in own domain
+        self.do_request(
+            'check_role_from_group_on_project_existence',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_id)
+        # global role, other domain, user in own domain
+        self.do_request(
+            'check_user_role_existence_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_id)
+        # global role, other domain, group in own domain
+        self.do_request(
+            'check_role_from_group_on_domain_existence',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_id)
+        # role in own domain, project in other domain, user in own domain
+        # (none created, should 403)
+        self.do_request(
+            'check_user_role_existence_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, project in other domain, group in own domain
+        # (none created, should 403)
+        self.do_request(
+            'check_role_from_group_on_project_existence',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, other domain, user in own domain
+        # (none created, should 403)
+        self.do_request(
+            'check_user_role_existence_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, other domain, group in own domain
+        # (none created, should 403)
+        self.do_request(
+            'check_role_from_group_on_domain_existence',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_own_domain)
+        # role in other domain, project in other domain, user in own domain
+        self.do_request(
+            'check_user_role_existence_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, project in other domain, group in own domain
+        self.do_request(
+            'check_role_from_group_on_project_existence',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, other domain, user in own domain
+        self.do_request(
+            'check_user_role_existence_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            user_id=self.user_in_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, other domain, group in own domain
+        self.do_request(
+            'check_role_from_group_on_domain_existence',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            group_id=self.group_in_domain,
+            role_id=self.role_other_domain)
+        #######################################################
+        # RESOURCE IN OTHER DOMAIN - IDENTITY IN OTHER DOMAIN #
+        #######################################################
+        # global role, project in other domain, user in other domain
+        self.do_request(
+            'check_user_role_existence_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_id)
+        # global role, project in other domain, group in other domain
+        self.do_request(
+            'check_role_from_group_on_project_existence',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_id)
+        # global role, other domain, user in other domain
+        self.do_request(
+            'check_user_role_existence_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_id)
+        # global role, other domain, group in other domain
+        self.do_request(
+            'check_role_from_group_on_domain_existence',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_id)
+        # role in own domain, project in other domain, user in other domain
+        # (none created, should 403)
+        self.do_request(
+            'check_user_role_existence_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, project in other domain, group in other domain
+        # (none created, should 403)
+        self.do_request(
+            'check_role_from_group_on_project_existence',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, other domain, user in other domain
+        # (none created, should 403)
+        self.do_request(
+            'check_user_role_existence_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_own_domain)
+        # role in own domain, other domain, group in other domain
+        # (none created, should 403)
+        self.do_request(
+            'check_role_from_group_on_domain_existence',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_own_domain)
+        # role in other domain, project in other domain, user in other domain
+        self.do_request(
+            'check_user_role_existence_on_project',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, project in other domain, group in other domain
+        self.do_request(
+            'check_role_from_group_on_project_existence',
+            expected_status=exceptions.Forbidden,
+            project_id=self.project_other_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, other domain, user in other domain
+        self.do_request(
+            'check_user_role_existence_on_domain',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            user_id=self.user_other_domain,
+            role_id=self.role_other_domain)
+        # role in other domain, other domain, group in other domain
+        self.do_request(
+            'check_role_from_group_on_domain_existence',
+            expected_status=exceptions.Forbidden,
+            domain_id=self.other_domain,
+            group_id=self.group_other_domain,
+            role_id=self.role_other_domain)
+
+    def test_identity_create_grant(self):
+        ###################################################
+        # RESOURCE IN OWN DOMAIN - IDENTITY IN OWN DOMAIN #
+        ###################################################
         # global role, project in own domain, user in own domain
         self.do_request(
             'create_user_role_on_project',
@@ -4068,46 +5433,6 @@ class DomainMemberTests(DomainAdminTests):
             group_id=self.group_other_domain,
             role_id=self.role_other_domain)
 
-    def test_identity_create_system_grant_for_user(self):
-        self.do_request(
-            'create_user_role_on_system',
-            expected_status=exceptions.Forbidden,
-            user_id=self.user_in_domain,
-            role_id=self.role_id)
-        self.do_request(
-            'create_user_role_on_system',
-            expected_status=exceptions.Forbidden,
-            user_id=self.user_other_domain,
-            role_id=self.role_id)
-
-    def test_identity_revoke_system_grant_for_user(self):
-        # group in own domain
-        self.admin_roles_client.create_group_role_on_system(
-            group_id=self.group_in_domain,
-            role_id=self.role_id)
-        self.addCleanup(
-            self.admin_roles_client.delete_role_from_group_on_system,
-            group_id=self.group_in_domain,
-            role_id=self.role_id)
-        self.do_request(
-            'delete_role_from_group_on_system',
-            expected_status=exceptions.Forbidden,
-            group_id=self.group_in_domain,
-            role_id=self.role_id)
-        # group in other domain
-        self.admin_roles_client.create_group_role_on_system(
-            group_id=self.group_other_domain,
-            role_id=self.role_id)
-        self.addCleanup(
-            self.admin_roles_client.delete_role_from_group_on_system,
-            group_id=self.group_other_domain,
-            role_id=self.role_id)
-        self.do_request(
-            'delete_role_from_group_on_system',
-            expected_status=exceptions.Forbidden,
-            group_id=self.group_other_domain,
-            role_id=self.role_id)
-
 
 class DomainReaderTests(DomainMemberTests):
 
@@ -4119,9 +5444,9 @@ class ProjectAdminTests(SystemAdminTests):
     credentials = ['project_admin', 'system_admin']
 
 
-class ProjectMemberTests(ProjectAdminTests):
+class ProjectManagerTests(ProjectAdminTests):
 
-    credentials = ['project_member', 'system_admin']
+    credentials = ['project_manager', 'system_admin']
 
     def test_identity_check_grant(self):
         # global role, arbitrary project, arbitrary user
@@ -4458,6 +5783,11 @@ class ProjectMemberTests(ProjectAdminTests):
             expected_status=exceptions.Forbidden,
             group_id=self.group_other_domain,
             role_id=self.role_id)
+
+
+class ProjectMemberTests(ProjectManagerTests):
+
+    credentials = ['project_member', 'system_admin']
 
 
 class ProjectReaderTests(ProjectMemberTests):

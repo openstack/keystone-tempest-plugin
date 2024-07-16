@@ -45,6 +45,8 @@ class IdentityV3RbacRoleTest(rbac_base.IdentityV3RbacBaseTests,
             cls.admin_client.domains_client.update_domain,
             cls.domain_id,
             enabled=False)
+        cls.member_role_id = cls.admin_client.roles_v3_client.list_roles(
+            name='member')['roles'][0]['id']
 
     def role(self, domain_id=None):
         role = {}
@@ -304,7 +306,7 @@ class SystemMemberTests(SystemAdminTests):
                         description=data_utils.arbitrary_string())
 
     def test_identity_delete_domain_role(self):
-        # user can delete domain role
+        # user cannot delete domain role
         role = self.admin_roles_client.create_role(
             **self.role(domain_id=self.domain_id))['role']
         self.do_request('delete_role', expected_status=exceptions.Forbidden,
@@ -349,7 +351,27 @@ class DomainAdminTests(SystemReaderTests):
                         domain_id=self.domain_id)
 
 
-class DomainMemberTests(DomainAdminTests):
+class DomainManagerTests(DomainAdminTests):
+
+    credentials = ['domain_manager', 'system_admin']
+
+    def test_identity_get_role(self):
+        # user can get role that is part of the domain_managed_target_role
+        # list for domain managers, which per default includes "member"
+        self.do_request('show_role', role_id=self.member_role_id)
+        # user cannot get arbitrary global role not part of the
+        # domain_managed_target_role list
+        role = self.admin_roles_client.create_role(
+            **self.role())['role']
+        self.addCleanup(self.admin_roles_client.delete_role, role['id'])
+        self.do_request('show_role', expected_status=exceptions.Forbidden,
+                        role_id=role['id'])
+        # user gets a 404 for nonexistent role
+        self.do_request('show_role', expected_status=exceptions.NotFound,
+                        role_id=data_utils.rand_uuid_hex())
+
+
+class DomainMemberTests(DomainManagerTests):
 
     credentials = ['domain_member', 'system_admin']
 
@@ -381,7 +403,12 @@ class ProjectAdminTests(SystemAdminTests):
     credentials = ['project_admin', 'system_admin']
 
 
-class ProjectMemberTests(DomainMemberTests):
+class ProjectManagerTests(DomainMemberTests):
+
+    credentials = ['project_manager', 'system_admin']
+
+
+class ProjectMemberTests(ProjectManagerTests):
 
     credentials = ['project_member', 'system_admin']
 

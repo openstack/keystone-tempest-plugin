@@ -496,7 +496,12 @@ class DomainAdminTests(SystemReaderTests, base.BaseIdentityTest):
                         project_id=project)
 
 
-class DomainMemberTests(DomainAdminTests, base.BaseIdentityTest):
+class DomainManagerTests(DomainAdminTests, base.BaseIdentityTest):
+
+    credentials = ['domain_manager', 'system_admin']
+
+
+class DomainMemberTests(DomainManagerTests):
 
     credentials = ['domain_member', 'system_admin']
 
@@ -511,7 +516,12 @@ class ProjectAdminTests(SystemAdminTests):
     credentials = ['project_admin', 'system_admin']
 
 
-class ProjectMemberTests(DomainReaderTests):
+class ProjectManagerTests(DomainReaderTests):
+
+    credentials = ['project_manager', 'system_admin']
+
+
+class ProjectMemberTests(ProjectManagerTests):
 
     credentials = ['project_member', 'system_admin']
 

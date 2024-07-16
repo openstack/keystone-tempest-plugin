@@ -464,7 +464,12 @@ class DomainAdminTests(IdentityV3RbacEc2CredentialTest, base.BaseIdentityTest):
             access=data_utils.rand_uuid_hex())
 
 
-class DomainMemberTests(DomainAdminTests):
+class DomainManagerTests(DomainAdminTests):
+
+    credentials = ['domain_manager', 'system_admin']
+
+
+class DomainMemberTests(DomainManagerTests):
 
     credentials = ['domain_member', 'system_admin']
 
@@ -479,9 +484,9 @@ class ProjectAdminTests(SystemAdminTests):
     credentials = ['project_admin', 'system_admin']
 
 
-class ProjectMemberTests(SystemReaderTests):
+class ProjectManagerTests(SystemReaderTests):
 
-    credentials = ['project_member', 'system_admin']
+    credentials = ['project_manager', 'system_admin']
 
     def test_identity_ec2_get_credential(self):
         # user can get their own credential
@@ -537,6 +542,11 @@ class ProjectMemberTests(SystemReaderTests):
         self.do_request('list_user_ec2_credentials',
                         expected_status=exceptions.Forbidden,
                         user_id=self.test_user_2)
+
+
+class ProjectMemberTests(ProjectManagerTests):
+
+    credentials = ['project_member', 'system_admin']
 
 
 class ProjectReaderTests(ProjectMemberTests):

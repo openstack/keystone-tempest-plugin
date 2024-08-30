@@ -13,4 +13,4 @@ documentation`_.
 * Free software: Apache license
 * Documentation: https://docs.openstack.org/keystone/latest/
 * Source: http://opendev.org/openstack/keystone-tempest-plugin
-* Bugs: http://bugs.launchpad.net/keystone_tempest_plugin
+* Bugs: https://bugs.launchpad.net/keystone/

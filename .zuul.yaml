@@ -10,7 +10,6 @@
         keystone: https://opendev.org/openstack/keystone
       devstack_services:
         g-api: false
-        g-reg: false
         n-api: false
         n-api-meta: false
         n-cond: false

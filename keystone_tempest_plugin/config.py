@@ -26,7 +26,9 @@ identity_feature_options = [
                      'identity provider. If disabled, only '
                      'Keystone-to-Keystone tests will be enabled.'),
     cfg.BoolOpt('enforce_scope',
-                default=False,
+                deprecated_for_removal=True,
+                deprecated_reason=('This is replaced by the [enforce_scope] '
+                                   'keystone option'),
                 help='Does the keystone service enforce scope and use '
                      'scope-aware policies?'),
 ]

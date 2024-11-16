@@ -26,7 +26,7 @@ class KeycloakClient(object):
 
     @property
     def url_base(self):
-        return self.keycloak_url + f'/admin/realms'
+        return self.keycloak_url + '/admin/realms'
 
     @property
     def token_endpoint(self):

@@ -157,7 +157,7 @@ class IdentityV3RbacPolicyAssociationTests(rbac_base.IdentityV3RbacBaseTests,
         This test must check
           * whether the persona can delete a policy association for a region
             and service
-        """
+        """  # noqa: E501
         pass
 
 

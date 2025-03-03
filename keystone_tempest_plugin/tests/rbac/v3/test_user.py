@@ -266,18 +266,124 @@ class DomainAdminTests(SystemAdminTests):
         self.assertIn(user1['id'], user_ids)
 
 
-class DomainMemberTests(IdentityV3RbacUserTest, base.BaseIdentityTest):
+class DomainManagerTests(DomainAdminTests):
 
-    credentials = ['domain_member', 'system_admin']
+    credentials = ['domain_manager', 'system_admin']
 
     def setUp(self):
-        super(DomainMemberTests, self).setUp()
+        super(DomainManagerTests, self).setUp()
         self.other_domain = self.admin_domains_client.create_domain(
             name=data_utils.rand_name())['domain']
         self.addCleanup(self.admin_domains_client.delete_domain,
                         self.other_domain['id'])
         self.addCleanup(self.admin_domains_client.update_domain,
                         domain_id=self.other_domain['id'], enabled=False)
+
+    def test_identity_create_user(self):
+        user_create = self.user()
+        # cannot create user without domain specified
+        self.do_request('create_user', expected_status=exceptions.Forbidden,
+                        **user_create)
+        # cannot create user in other domain
+        user_create['domain_id'] = self.other_domain['id']
+        self.do_request('create_user', expected_status=exceptions.Forbidden,
+                        **user_create)
+        # can create user in own domain
+        user_create['domain_id'] = self.persona.credentials.domain_id
+        resp = self.do_request('create_user', expected_status=201,
+                               **user_create)
+        self.addCleanup(self.admin_users_client.delete_user,
+                        resp['user']['id'])
+
+    def test_identity_get_user(self):
+        user_create = self.user()
+        user_create['domain_id'] = self.other_domain['id']
+        user = self.admin_users_client.create_user(**user_create)['user']
+        self.addCleanup(self.admin_users_client.delete_user, user['id'])
+        # user cannot get user in other domain
+        self.do_request('show_user', expected_status=exceptions.Forbidden,
+                        user_id=user['id'])
+        user_create['domain_id'] = self.persona.credentials.domain_id
+        user = self.admin_users_client.create_user(**user_create)['user']
+        self.addCleanup(self.admin_users_client.delete_user, user['id'])
+        # user can get user in own domain
+        resp = self.do_request('show_user', user_id=user['id'])
+        self.assertEqual(resp['user']['id'], user['id'])
+        # user can get own user
+        user_id = self.persona.credentials.user_id
+        resp = self.do_request('show_user', user_id=user_id)
+        self.assertEqual(resp['user']['id'], user_id)
+        # user gets a 403 for nonexistent user
+        self.do_request('show_user', expected_status=exceptions.Forbidden,
+                        user_id='fakeuser')
+
+    def test_identity_list_users(self):
+        user_create = self.user()
+        # create user in other domain
+        user_create['domain_id'] = self.other_domain['id']
+        user1 = self.admin_users_client.create_user(**user_create)['user']
+        self.addCleanup(self.admin_users_client.delete_user, user1['id'])
+        # create user in own domain
+        user_create['domain_id'] = self.persona.credentials.domain_id
+        user2 = self.admin_users_client.create_user(**user_create)['user']
+        self.addCleanup(self.admin_users_client.delete_user, user2['id'])
+        resp = self.do_request('list_users')
+        user_ids = set(u['id'] for u in resp['users'])
+        self.assertNotIn(user1['id'], user_ids)
+        self.assertIn(user2['id'], user_ids)
+
+    def test_identity_update_user(self):
+        user_create = self.user()
+        # create user in other domain
+        user_create['domain_id'] = self.other_domain['id']
+        user = self.admin_users_client.create_user(**user_create)['user']
+        self.addCleanup(self.admin_users_client.delete_user, user['id'])
+        user_update = {
+            'user_id': user['id'],
+            'description': data_utils.arbitrary_string()
+        }
+        self.do_request('update_user', expected_status=exceptions.Forbidden,
+                        **user_update)
+        # create user in own domain
+        user_create['domain_id'] = self.persona.credentials.domain_id
+        user = self.admin_users_client.create_user(**user_create)['user']
+        self.addCleanup(self.admin_users_client.delete_user, user['id'])
+        # user can update user in own domain
+        user_update = {
+            'user_id': user['id'],
+            'description': data_utils.arbitrary_string()
+        }
+        self.do_request('update_user', **user_update)
+        # user gets a 403 for nonexistent user
+        user_update = {
+            'user_id': 'fakeuser',
+            'description': data_utils.arbitrary_string()
+        }
+        self.do_request('update_user', expected_status=exceptions.Forbidden,
+                        **user_update)
+
+    def test_identity_delete_user(self):
+        user_create = self.user()
+        # create user in other domain
+        user_create['domain_id'] = self.other_domain['id']
+        user = self.admin_users_client.create_user(**user_create)['user']
+        self.addCleanup(self.admin_users_client.delete_user, user['id'])
+        # user cannot delete user in other domain
+        self.do_request('delete_user', expected_status=exceptions.Forbidden,
+                        user_id=user['id'])
+        # create user in own domain
+        user_create['domain_id'] = self.persona.credentials.domain_id
+        user = self.admin_users_client.create_user(**user_create)['user']
+        # user can delete user in own domain
+        self.do_request('delete_user', expected_status=204, user_id=user['id'])
+        # user gets a 403 for nonexistent user
+        self.do_request('delete_user', expected_status=exceptions.Forbidden,
+                        user_id='fakeuser')
+
+
+class DomainMemberTests(DomainManagerTests):
+
+    credentials = ['domain_member', 'system_admin']
 
     def test_identity_create_user(self):
         user_create = self.user()
@@ -388,9 +494,9 @@ class ProjectAdminTests(SystemAdminTests):
     credentials = ['project_admin', 'system_admin']
 
 
-class ProjectMemberTests(IdentityV3RbacUserTest, base.BaseIdentityTest):
+class ProjectManagerTests(IdentityV3RbacUserTest, base.BaseIdentityTest):
 
-    credentials = ['project_member', 'system_admin']
+    credentials = ['project_manager', 'system_admin']
 
     def test_identity_create_user(self):
         self.do_request('create_user', expected_status=exceptions.Forbidden,
@@ -441,6 +547,11 @@ class ProjectMemberTests(IdentityV3RbacUserTest, base.BaseIdentityTest):
         # user gets a 403 for nonexistent user
         self.do_request('delete_user', expected_status=exceptions.Forbidden,
                         user_id='fakeuser')
+
+
+class ProjectMemberTests(ProjectManagerTests):
+
+    credentials = ['project_member', 'system_admin']
 
 
 class ProjectReaderTests(ProjectMemberTests):

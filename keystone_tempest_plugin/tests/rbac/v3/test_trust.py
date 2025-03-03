@@ -357,7 +357,12 @@ class DomainAdminTests(SystemReaderTests, base.BaseIdentityTest):
                         trust_id=trust_id, role_id=self.roles[0]['id'])
 
 
-class DomainMemberTests(DomainAdminTests):
+class DomainManagerTests(DomainAdminTests):
+
+    credentials = ['domain_manager', 'system_admin']
+
+
+class DomainMemberTests(DomainManagerTests):
 
     credentials = ['domain_member', 'system_admin']
 
@@ -396,12 +401,12 @@ class ProjectAdminTests(SystemAdminTests):
             **self.trust())
 
 
-class ProjectMemberTests(IdentityV3RbacTrustTest, base.BaseIdentityTest):
+class ProjectManagerTests(IdentityV3RbacTrustTest, base.BaseIdentityTest):
 
-    credentials = ['project_member', 'system_admin']
+    credentials = ['project_manager', 'system_admin']
 
     def setUp(self):
-        super(ProjectMemberTests, self).setUp()
+        super(ProjectManagerTests, self).setUp()
         self.role_id = self.member_role_id
 
     def test_identity_create_trust(self):
@@ -568,6 +573,11 @@ class ProjectMemberTests(IdentityV3RbacTrustTest, base.BaseIdentityTest):
         self.addCleanup(self.user_trust_client.delete_trust, trust_id=trust_id)
         self.do_request('delete_trust', expected_status=exceptions.Forbidden,
                         trust_id=trust_id)
+
+
+class ProjectMemberTests(ProjectManagerTests):
+
+    credentials = ['project_member', 'system_admin']
 
 
 class ProjectReaderTests(ProjectMemberTests):

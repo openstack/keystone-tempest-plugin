@@ -982,9 +982,9 @@ class ProjectAdminTests(SystemAdminTests):
     credentials = ['project_admin', 'system_admin']
 
 
-class ProjectMemberTests(IdentityV3RbacAssignmentTest, base.BaseIdentityTest):
+class ProjectManagerTests(IdentityV3RbacAssignmentTest, base.BaseIdentityTest):
 
-    credentials = ['project_member', 'system_admin']
+    credentials = ['project_manager', 'system_admin']
 
     def test_identity_list_role_assignments(self):
         # Listing all assignments with no filters should fail
@@ -1115,6 +1115,11 @@ class ProjectMemberTests(IdentityV3RbacAssignmentTest, base.BaseIdentityTest):
                  'include_subtree': True}
         self.do_request('list_role_assignments',
                         expected_status=exceptions.Forbidden, **query)
+
+
+class ProjectMemberTests(ProjectManagerTests):
+
+    credentials = ['project_member', 'system_admin']
 
 
 class ProjectReaderTests(ProjectMemberTests):

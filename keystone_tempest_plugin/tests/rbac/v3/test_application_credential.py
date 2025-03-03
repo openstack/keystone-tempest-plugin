@@ -401,7 +401,12 @@ class DomainAdminTests(
             application_credential_id=data_utils.rand_uuid_hex())
 
 
-class DomainMemberTests(DomainAdminTests):
+class DomainManagerTests(DomainAdminTests):
+
+    credentials = ['domain_manager', 'system_admin']
+
+
+class DomainMemberTests(DomainManagerTests):
 
     credentials = ['domain_member', 'system_admin']
 
@@ -416,10 +421,10 @@ class ProjectAdminTests(SystemAdminTests):
     credentials = ['project_admin', 'system_admin']
 
 
-class ProjectMemberTests(IdentityV3RbacApplicationCredentialTest,
-                         base.BaseIdentityTest):
+class ProjectManagerTests(IdentityV3RbacApplicationCredentialTest,
+                          base.BaseIdentityTest):
 
-    credentials = ['project_member', 'system_admin']
+    credentials = ['project_manager', 'system_admin']
 
     @classmethod
     def setup_clients(cls):
@@ -558,6 +563,11 @@ class ProjectMemberTests(IdentityV3RbacApplicationCredentialTest,
             expected_status=exceptions.Forbidden,
             user_id=user_id,
             application_credential_id=data_utils.rand_uuid_hex())
+
+
+class ProjectMemberTests(ProjectManagerTests):
+
+    credentials = ['project_member', 'system_admin']
 
 
 class ProjectReaderTests(ProjectMemberTests):

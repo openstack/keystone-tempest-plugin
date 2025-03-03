@@ -490,6 +490,282 @@ class DomainAdminTests(SystemAdminTests):
         self.assertEqual(0, len(user_ids))
 
 
+class DomainManagerTests(DomainAdminTests):
+
+    credentials = ['domain_manager', 'system_admin']
+
+    def test_identity_create_group(self):
+        # user can create group in own domain
+        resp = self.do_request('create_group',
+                               expected_status=201,
+                               **self.group(domain_id=self.own_domain))
+        self.addCleanup(self.admin_groups_client.delete_group,
+                        resp['group']['id'])
+        # user cannot create group in another domain
+        self.do_request('create_group',
+                        expected_status=exceptions.Forbidden,
+                        **self.group(domain_id=self.other_domain))
+
+    def test_identity_get_group(self):
+        group = self.admin_groups_client.create_group(
+            **self.group(domain_id=self.own_domain))['group']
+        self.addCleanup(self.admin_groups_client.delete_group, group['id'])
+        # user can get group in own domain
+        self.do_request('show_group', group_id=group['id'])
+        # user cannot get group in other domain
+        group = self.admin_groups_client.create_group(
+            **self.group(domain_id=self.other_domain))['group']
+        self.addCleanup(self.admin_groups_client.delete_group, group['id'])
+        self.do_request('show_group', expected_status=exceptions.Forbidden,
+                        group_id=group['id'])
+        # user gets a 403 for nonexistent group
+        self.do_request('show_group', expected_status=exceptions.Forbidden,
+                        group_id='fakegroup')
+
+    def test_identity_list_groups_for_user(self):
+        group1 = self.admin_groups_client.create_group(
+            **self.group(domain_id=self.own_domain))['group']
+        self.addCleanup(self.admin_groups_client.delete_group, group1['id'])
+        user1 = self.admin_client.users_v3_client.create_user(
+            name=data_utils.rand_name('user'),
+            domain_id=self.own_domain)['user']
+        self.addCleanup(self.admin_client.users_v3_client.delete_user,
+                        user1['id'])
+        group2 = self.admin_groups_client.create_group(
+            **self.group(domain_id=self.other_domain))['group']
+        self.addCleanup(self.admin_groups_client.delete_group, group2['id'])
+        user2 = self.admin_client.users_v3_client.create_user(
+            name=data_utils.rand_name('user'),
+            domain_id=self.other_domain)['user']
+        self.addCleanup(self.admin_client.users_v3_client.delete_user,
+                        user2['id'])
+        self.admin_groups_client.add_group_user(group1['id'], user1['id'])
+        self.admin_groups_client.add_group_user(group1['id'], user2['id'])
+        self.admin_groups_client.add_group_user(group2['id'], user1['id'])
+        self.admin_groups_client.add_group_user(group2['id'], user2['id'])
+        resp = self.do_request('list_user_groups', client=self.users_client,
+                               user_id=user1['id'])
+        # user can list groups in own domain for user in own domain
+        self.assertIn(group1['id'], set(g['id'] for g in resp['groups']))
+        # user cannot list groups in other domain for user in own domain
+        self.assertNotIn(group2['id'], set(g['id'] for g in resp['groups']))
+        # user cannot list groups for user in other domain
+        resp = self.do_request('list_user_groups', client=self.users_client,
+                               expected_status=exceptions.Forbidden,
+                               user_id=user2['id'])
+        # user gets a 403 for nonexistent user
+        self.do_request('list_user_groups', client=self.users_client,
+                        expected_status=exceptions.Forbidden,
+                        user_id='fakeuser')
+
+    def test_identity_update_group(self):
+        group1 = self.admin_groups_client.create_group(
+            **self.group(domain_id=self.own_domain))['group']
+        self.addCleanup(self.admin_groups_client.delete_group, group1['id'])
+        group2 = self.admin_groups_client.create_group(
+            **self.group(domain_id=self.other_domain))['group']
+        self.addCleanup(self.admin_groups_client.delete_group, group2['id'])
+        # user can update a group in own domain
+        group_update = {
+            'group_id': group1['id'],
+            'description': data_utils.arbitrary_string
+        }
+        self.do_request('update_group', **group_update)
+        # user cannot update a group in other domain
+        group_update = {
+            'group_id': group2['id'],
+            'description': data_utils.arbitrary_string
+        }
+        self.do_request('update_group', expected_status=exceptions.Forbidden,
+                        **group_update)
+        # user gets a 403 for nonexistent group
+        group_update = {
+            'group_id': 'fakegroup',
+            'description': data_utils.arbitrary_string
+        }
+        self.do_request('update_group', expected_status=exceptions.Forbidden,
+                        **group_update)
+
+    def test_identity_delete_group(self):
+        group1 = self.admin_groups_client.create_group(
+            **self.group(domain_id=self.own_domain))['group']
+        group2 = self.admin_groups_client.create_group(
+            **self.group(domain_id=self.other_domain))['group']
+        self.addCleanup(self.admin_groups_client.delete_group, group2['id'])
+        # user can delete a group in own domain
+        self.do_request('delete_group', expected_status=204,
+                        group_id=group1['id'])
+        # user cannot delete a group in other domain
+        self.do_request('delete_group', expected_status=exceptions.Forbidden,
+                        group_id=group2['id'])
+        # user gets a 404 for nonexistent group
+        self.do_request('delete_group', expected_status=exceptions.NotFound,
+                        group_id='fakegroup')
+
+    def test_identity_list_users_in_group(self):
+        group1 = self.admin_groups_client.create_group(
+            **self.group(domain_id=self.own_domain))['group']
+        self.addCleanup(self.admin_groups_client.delete_group, group1['id'])
+        user1 = self.admin_client.users_v3_client.create_user(
+            name=data_utils.rand_name('user'),
+            domain_id=self.own_domain)['user']
+        self.addCleanup(self.admin_client.users_v3_client.delete_user,
+                        user1['id'])
+        group2 = self.admin_groups_client.create_group(
+            **self.group(domain_id=self.other_domain))['group']
+        self.addCleanup(self.admin_groups_client.delete_group, group2['id'])
+        user2 = self.admin_client.users_v3_client.create_user(
+            name=data_utils.rand_name('user'),
+            domain_id=self.other_domain)['user']
+        self.addCleanup(self.admin_client.users_v3_client.delete_user,
+                        user2['id'])
+        self.admin_groups_client.add_group_user(group1['id'], user1['id'])
+        self.admin_groups_client.add_group_user(group1['id'], user2['id'])
+        self.admin_groups_client.add_group_user(group2['id'], user1['id'])
+        self.admin_groups_client.add_group_user(group2['id'], user2['id'])
+        resp = self.do_request('list_group_users', group_id=group1['id'])
+        # user can list users in own domain for group in own domain
+        self.assertIn(user1['id'], set(u['id'] for u in resp['users']))
+        # user cannot list users in another domain for group in own domain
+        self.assertNotIn(user2['id'], set(u['id'] for u in resp['users']))
+        # user cannot list users for group in another domain
+        self.do_request('list_group_users',
+                        expected_status=exceptions.Forbidden,
+                        group_id=group2['id'])
+
+    def test_identity_add_user_to_group(self):
+        group1 = self.admin_groups_client.create_group(
+            **self.group(self.own_domain))['group']
+        self.addCleanup(self.admin_groups_client.delete_group, group1['id'])
+        group2 = self.admin_groups_client.create_group(
+            **self.group(self.other_domain))['group']
+        self.addCleanup(self.admin_groups_client.delete_group, group2['id'])
+        user1 = self.admin_client.users_v3_client.create_user(
+            name=data_utils.rand_name('user'),
+            domain_id=self.own_domain)['user']
+        self.addCleanup(self.admin_client.users_v3_client.delete_user,
+                        user1['id'])
+        user2 = self.admin_client.users_v3_client.create_user(
+            name=data_utils.rand_name('user'),
+            domain_id=self.other_domain)['user']
+        self.addCleanup(self.admin_client.users_v3_client.delete_user,
+                        user2['id'])
+        # user can add a user in own domain to a group in own domain
+        self.do_request('add_group_user', expected_status=204,
+                        group_id=group1['id'], user_id=user1['id'])
+        # user cannot add a user in another domain to a group in own domain
+        self.do_request('add_group_user', expected_status=exceptions.Forbidden,
+                        group_id=group1['id'], user_id=user2['id'])
+        # user cannot add a user in own domain to a group in another domain
+        self.do_request('add_group_user', expected_status=exceptions.Forbidden,
+                        group_id=group2['id'], user_id=user1['id'])
+        # user cannot add a user in another domain to a group in another domain
+        self.do_request('add_group_user', expected_status=exceptions.Forbidden,
+                        group_id=group2['id'], user_id=user2['id'])
+        # user gets a 403 for nonexistent group
+        self.do_request('add_group_user', expected_status=exceptions.Forbidden,
+                        group_id='fakegroup', user_id=user1['id'])
+        # user gets a 403 for nonexistent user
+        self.do_request('add_group_user', expected_status=exceptions.Forbidden,
+                        group_id=group1['id'], user_id='fakeuser')
+
+    def test_identity_remove_user_from_group(self):
+        group1 = self.admin_groups_client.create_group(
+            **self.group(self.own_domain))['group']
+        self.addCleanup(self.admin_groups_client.delete_group, group1['id'])
+        group2 = self.admin_groups_client.create_group(
+            **self.group(self.other_domain))['group']
+        self.addCleanup(self.admin_groups_client.delete_group, group2['id'])
+        user1 = self.admin_client.users_v3_client.create_user(
+            name=data_utils.rand_name('user'),
+            domain_id=self.own_domain)['user']
+        self.addCleanup(self.admin_client.users_v3_client.delete_user,
+                        user1['id'])
+        user2 = self.admin_client.users_v3_client.create_user(
+            name=data_utils.rand_name('user'),
+            domain_id=self.other_domain)['user']
+        self.addCleanup(self.admin_client.users_v3_client.delete_user,
+                        user2['id'])
+        self.admin_groups_client.add_group_user(group1['id'], user1['id'])
+        self.admin_groups_client.add_group_user(group1['id'], user2['id'])
+        self.admin_groups_client.add_group_user(group2['id'], user1['id'])
+        self.admin_groups_client.add_group_user(group2['id'], user2['id'])
+        # user can remove a user in own domain from a group in own domain
+        self.do_request('delete_group_user', expected_status=204,
+                        group_id=group1['id'], user_id=user1['id'])
+        # user cannot remove a user in another domain from a group in own
+        # domain
+        self.do_request('delete_group_user',
+                        expected_status=exceptions.Forbidden,
+                        group_id=group1['id'], user_id=user2['id'])
+        # user cannot remove a user in own domain from a group in another
+        # domain
+        self.do_request('delete_group_user',
+                        expected_status=exceptions.Forbidden,
+                        group_id=group2['id'], user_id=user1['id'])
+        # user cannot remove a user in another domain from a group in another
+        # domain
+        self.do_request('delete_group_user',
+                        expected_status=exceptions.Forbidden,
+                        group_id=group2['id'], user_id=user2['id'])
+        # user gets a 403 for nonexistent group
+        self.do_request('delete_group_user',
+                        expected_status=exceptions.Forbidden,
+                        group_id='fakegroup', user_id=user1['id'])
+        # user gets a 403 for nonexistent user
+        self.do_request('delete_group_user',
+                        expected_status=exceptions.Forbidden,
+                        group_id=group1['id'], user_id='fakeuser')
+
+    def test_identity_check_user_in_group(self):
+        group1 = self.admin_groups_client.create_group(
+            **self.group(self.own_domain))['group']
+        self.addCleanup(self.admin_groups_client.delete_group, group1['id'])
+        group2 = self.admin_groups_client.create_group(
+            **self.group(self.other_domain))['group']
+        self.addCleanup(self.admin_groups_client.delete_group, group2['id'])
+        user1 = self.admin_client.users_v3_client.create_user(
+            name=data_utils.rand_name('user'),
+            domain_id=self.own_domain)['user']
+        self.addCleanup(self.admin_client.users_v3_client.delete_user,
+                        user1['id'])
+        user2 = self.admin_client.users_v3_client.create_user(
+            name=data_utils.rand_name('user'),
+            domain_id=self.own_domain)['user']
+        self.addCleanup(self.admin_client.users_v3_client.delete_user,
+                        user2['id'])
+        self.admin_groups_client.add_group_user(group1['id'], user1['id'])
+        self.admin_groups_client.add_group_user(group1['id'], user2['id'])
+        self.admin_groups_client.add_group_user(group2['id'], user1['id'])
+        self.admin_groups_client.add_group_user(group2['id'], user2['id'])
+        # user can check if a user in own domain is in a group in own domain
+        self.do_request('check_group_user_existence', expected_status=204,
+                        group_id=group1['id'], user_id=user1['id'])
+        # user can check if a user in another domain is in a group in own
+        # domain
+        self.do_request('check_group_user_existence',
+                        expected_status=204,
+                        group_id=group1['id'], user_id=user2['id'])
+        # user cannot check if a user in own domain is in a group in another
+        # domain
+        self.do_request('check_group_user_existence',
+                        expected_status=exceptions.Forbidden,
+                        group_id=group2['id'], user_id=user1['id'])
+        # user cannot check if a user in another domain is in a group in
+        # another domain
+        self.do_request('check_group_user_existence',
+                        expected_status=exceptions.Forbidden,
+                        group_id=group2['id'], user_id=user2['id'])
+        # user gets a 403 for nonexistent group
+        self.do_request('check_group_user_existence',
+                        expected_status=exceptions.Forbidden,
+                        group_id='fakegroup', user_id=user1['id'])
+        # user gets a 403 for nonexistent user
+        self.do_request('check_group_user_existence',
+                        expected_status=exceptions.Forbidden,
+                        group_id=group1['id'], user_id='fakeuser')
+
+
 class DomainMemberTests(IdentityV3RbacGroupTest, base.BaseIdentityTest):
 
     credentials = ['domain_member', 'system_admin']
@@ -659,7 +935,7 @@ class DomainMemberTests(IdentityV3RbacGroupTest, base.BaseIdentityTest):
                         user1['id'])
         user2 = self.admin_client.users_v3_client.create_user(
             name=data_utils.rand_name('user'),
-            domain_id=self.own_domain)['user']
+            domain_id=self.other_domain)['user']
         self.addCleanup(self.admin_client.users_v3_client.delete_user,
                         user2['id'])
         # user cannot add a user in own domain to a group in own domain
@@ -695,7 +971,7 @@ class DomainMemberTests(IdentityV3RbacGroupTest, base.BaseIdentityTest):
                         user1['id'])
         user2 = self.admin_client.users_v3_client.create_user(
             name=data_utils.rand_name('user'),
-            domain_id=self.own_domain)['user']
+            domain_id=self.other_domain)['user']
         self.addCleanup(self.admin_client.users_v3_client.delete_user,
                         user2['id'])
         self.admin_groups_client.add_group_user(group1['id'], user1['id'])
@@ -789,9 +1065,9 @@ class ProjectAdminTests(SystemAdminTests):
     credentials = ['project_admin', 'system_admin']
 
 
-class ProjectMemberTests(IdentityV3RbacGroupTest, base.BaseIdentityTest):
+class ProjectManagerTests(IdentityV3RbacGroupTest, base.BaseIdentityTest):
 
-    credentials = ['project_member', 'system_admin']
+    credentials = ['project_manager', 'system_admin']
 
     def test_identity_create_group(self):
         # user cannot create group in own domain
@@ -1070,6 +1346,11 @@ class ProjectMemberTests(IdentityV3RbacGroupTest, base.BaseIdentityTest):
         self.do_request('check_group_user_existence',
                         expected_status=exceptions.Forbidden,
                         group_id=group1['id'], user_id='fakeuser')
+
+
+class ProjectMemberTests(ProjectManagerTests):
+
+    credentials = ['project_member', 'system_admin']
 
 
 class ProjectReaderTests(ProjectMemberTests):

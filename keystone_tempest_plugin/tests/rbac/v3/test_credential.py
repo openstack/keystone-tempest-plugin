@@ -344,9 +344,9 @@ class DomainAdminTests(SystemAdminTests):
     credentials = ['domain_admin', 'system_admin']
 
 
-class DomainMemberTests(SystemReaderTests):
+class DomainManagerTests(SystemReaderTests):
 
-    credentials = ['domain_member', 'system_admin']
+    credentials = ['domain_manager', 'system_admin']
 
     def test_identity_get_credential(self):
         # user can get their own credential
@@ -391,6 +391,11 @@ class DomainMemberTests(SystemReaderTests):
             self.assertNotIn(cred['id'], [c['id'] for c in resp])
 
 
+class DomainMemberTests(DomainManagerTests):
+
+    credentials = ['domain_member', 'system_admin']
+
+
 class DomainReaderTests(DomainMemberTests):
 
     credentials = ['domain_reader', 'system_admin']
@@ -401,7 +406,12 @@ class ProjectAdminTests(SystemAdminTests):
     credentials = ['project_admin', 'system_admin']
 
 
-class ProjectMemberTests(DomainReaderTests):
+class ProjectManagerTests(DomainReaderTests):
+
+    credentials = ['project_manager', 'system_admin']
+
+
+class ProjectMemberTests(ProjectManagerTests):
 
     credentials = ['project_member', 'system_admin']
 

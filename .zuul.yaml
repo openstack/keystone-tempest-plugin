@@ -46,7 +46,6 @@
         - keystone-dsvm-py3-functional-federation-ubuntu-jammy-k2k
         - keystone-dsvm-py3-functional-2024-2
         - keystone-dsvm-py3-functional-2024-1
-        - keystone-dsvm-py3-functional-2023-2
         - keystone-protection-functional
     gate:
       jobs:
@@ -65,9 +64,3 @@
     parent: keystone-dsvm-py3-functional
     nodeset: openstack-single-node-jammy
     override-checkout: stable/2024.1
-
-- job:
-    name: keystone-dsvm-py3-functional-2023-2
-    parent: keystone-dsvm-py3-functional
-    nodeset: openstack-single-node-jammy
-    override-checkout: stable/2023.2

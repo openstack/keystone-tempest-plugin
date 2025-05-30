@@ -1,6 +1,6 @@
 - job:
     name: keystone-protection-functional
-    parent: keystone-dsvm-py3-functional
+    parent: keystone-tempest
     voting: false
     vars:
       tempest_test_regex: 'keystone_tempest_plugin.tests.rbac'
@@ -34,40 +34,40 @@
       devstack_local_conf:
         post-config: {}
 
+- job:
+    name: keystone-tempest-2025-1
+    parent: keystone-tempest
+    nodeset: openstack-single-node-noble
+    override-checkout: stable/2025.1
+
+- job:
+    name: keystone-tempest-2024-2
+    parent: keystone-tempest
+    nodeset: openstack-single-node-jammy
+    override-checkout: stable/2024.2
+
+- job:
+    name: keystone-tempest-2024-1
+    parent: keystone-tempest
+    nodeset: openstack-single-node-jammy
+    override-checkout: stable/2024.1
+
 - project:
     templates:
       - check-requirements
       - tempest-plugin-jobs
     check:
       jobs:
-        - keystone-dsvm-py3-functional
-        - keystone-dsvm-py3-functional-federation-ubuntu-jammy:
+        - keystone-tempest
+        - keystone-tempest-federation:
             voting: false
-        - keystone-dsvm-py3-functional-federation-ubuntu-jammy-k2k
-        - keystone-dsvm-py3-functional-2025-1
-        - keystone-dsvm-py3-functional-2024-2
-        - keystone-dsvm-py3-functional-2024-1
+        - keystone-tempest-federation-k2k
+        - keystone-tempest-2025-1
+        - keystone-tempest-2024-2
+        - keystone-tempest-2024-1
         - keystone-protection-functional
     gate:
       jobs:
-        - keystone-dsvm-py3-functional
-        - keystone-dsvm-py3-functional-federation-ubuntu-jammy-k2k
+        - keystone-tempest
+        - keystone-tempest-federation-k2k
         - keystone-protection-functional
-
-- job:
-    name: keystone-dsvm-py3-functional-2025-1
-    parent: keystone-dsvm-py3-functional
-    nodeset: openstack-single-node-noble
-    override-checkout: stable/2025.1
-
-- job:
-    name: keystone-dsvm-py3-functional-2024-2
-    parent: keystone-dsvm-py3-functional
-    nodeset: openstack-single-node-jammy
-    override-checkout: stable/2024.2
-
-- job:
-    name: keystone-dsvm-py3-functional-2024-1
-    parent: keystone-dsvm-py3-functional
-    nodeset: openstack-single-node-jammy
-    override-checkout: stable/2024.1

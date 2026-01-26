@@ -52,12 +52,6 @@
     nodeset: openstack-single-node-jammy
     override-checkout: stable/2024.2
 
-- job:
-    name: keystone-tempest-2024-1
-    parent: keystone-tempest
-    nodeset: openstack-single-node-jammy
-    override-checkout: stable/2024.1
-
 - project:
     templates:
       - check-requirements
@@ -71,7 +65,6 @@
         - keystone-tempest-2025-2
         - keystone-tempest-2025-1
         - keystone-tempest-2024-2
-        - keystone-tempest-2024-1
         - keystone-protection-functional
     gate:
       jobs:

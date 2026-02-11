@@ -290,8 +290,8 @@ class DomainAdminTests(IdentityV3RbacLimitTests, base.BaseIdentityTest):
             self.admin_limits_client.delete_limit,
             limit_id=reg_limit_2)
         resp = self.do_request('list_limits')
-        # should not see limit for other project
-        self.assertNotIn(
+        # admin should see limit for other project
+        self.assertIn(
             reg_limit_1, [rl['id'] for rl in resp['limits']])
         # should see limit for project in own domain
         self.assertIn(
@@ -358,6 +358,28 @@ class DomainAdminTests(IdentityV3RbacLimitTests, base.BaseIdentityTest):
 class DomainManagerTests(DomainAdminTests):
 
     credentials = ['domain_manager', 'system_admin']
+
+    def test_identity_list_limits(self):
+        # random project
+        reg_limit_1 = self.admin_limits_client.create_limits(
+            payload=self.limits())['limits'][0]['id']
+        self.addCleanup(
+            self.admin_limits_client.delete_limit,
+            limit_id=reg_limit_1)
+        # project in own domain
+        reg_limit_2 = self.admin_limits_client.create_limits(
+            payload=self.limits(project_id=self.own_project)
+        )['limits'][0]['id']
+        self.addCleanup(
+            self.admin_limits_client.delete_limit,
+            limit_id=reg_limit_2)
+        resp = self.do_request('list_limits')
+        # should not see limit for other project
+        self.assertNotIn(
+            reg_limit_1, [rl['id'] for rl in resp['limits']])
+        # should see limit for project in own domain
+        self.assertIn(
+            reg_limit_2, [rl['id'] for rl in resp['limits']])
 
     def test_identity_get_limit(self):
         # random project

@@ -235,7 +235,7 @@ class TestK2KFederatedAuthentication(TestSaml2EcpFederatedAuthentication):
         self.auth['user_id'] = user_id
         idp_info = self.idps_client.show_identity_provider(self.idp_id)
         domain_id = idp_info['identity_provider']['domain_id']
-        project_id = self.keystone_manager.identity_providers_client.tenant_id
+        project_id = self.keystone_manager.identity_providers_client.project_id
         self.auth['project_id'] = project_id
         group = self.keystone_manager.groups_client.create_group(
             name=data_utils.rand_uuid_hex(), domain_id=domain_id)

@@ -314,6 +314,36 @@ class SystemReaderTests(SystemMemberTests):
 
     credentials = ['system_reader', 'system_admin']
 
+    def test_identity_ec2_create_credential(self):
+        # reader can't create their own credential
+        user_id = self.persona.credentials.user_id
+        self.do_request(
+            'create_user_ec2_credential',
+            expected_status=exceptions.Forbidden,
+            user_id=user_id,
+            **self.ec2_credential(project_id=self.test_project_1))
+
+        # reader cannot create credential for other user
+        self.do_request(
+            'create_user_ec2_credential',
+            expected_status=exceptions.Forbidden,
+            user_id=self.test_user_2,
+            **self.ec2_credential(project_id=self.test_project_2))
+
+    def test_identity_ec2_delete_credential(self):
+        # reader cannot delete another user's credential
+        cred = self.admin_credentials_client.create_user_ec2_credential(
+            user_id=self.test_user_2,
+            **self.ec2_credential(project_id=self.test_project_2)
+        )['credential']
+        self.addCleanup(
+            self.admin_credentials_client.delete_user_ec2_credential,
+            user_id=self.test_user_2, access=cred['access'])
+        self.do_request(
+            'delete_user_ec2_credential',
+            expected_status=exceptions.Forbidden,
+            user_id=self.test_user_2, access=cred['access'])
+
 
 class DomainAdminTests(IdentityV3RbacEc2CredentialTest, base.BaseIdentityTest):
 
@@ -484,7 +514,7 @@ class ProjectAdminTests(SystemAdminTests):
     credentials = ['project_admin', 'system_admin']
 
 
-class ProjectManagerTests(SystemReaderTests):
+class ProjectManagerTests(SystemMemberTests):
 
     credentials = ['project_manager', 'system_admin']
 
@@ -552,3 +582,33 @@ class ProjectMemberTests(ProjectManagerTests):
 class ProjectReaderTests(ProjectMemberTests):
 
     credentials = ['project_reader', 'system_admin']
+
+    def test_identity_ec2_create_credential(self):
+        # reader can't create their own credential
+        user_id = self.persona.credentials.user_id
+        self.do_request(
+            'create_user_ec2_credential',
+            expected_status=exceptions.Forbidden,
+            user_id=user_id,
+            **self.ec2_credential(project_id=self.test_project_1))
+
+        # reader cannot create credential for other user
+        self.do_request(
+            'create_user_ec2_credential',
+            expected_status=exceptions.Forbidden,
+            user_id=self.test_user_2,
+            **self.ec2_credential(project_id=self.test_project_2))
+
+    def test_identity_ec2_delete_credential(self):
+        # reader cannot delete another user's credential
+        cred = self.admin_credentials_client.create_user_ec2_credential(
+            user_id=self.test_user_2,
+            **self.ec2_credential(project_id=self.test_project_2)
+        )['credential']
+        self.addCleanup(
+            self.admin_credentials_client.delete_user_ec2_credential,
+            user_id=self.test_user_2, access=cred['access'])
+        self.do_request(
+            'delete_user_ec2_credential',
+            expected_status=exceptions.Forbidden,
+            user_id=self.test_user_2, access=cred['access'])

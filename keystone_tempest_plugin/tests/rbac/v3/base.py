@@ -24,7 +24,7 @@ class IdentityV3RbacBaseTests(object):
     @classmethod
     def skip_checks(cls):
         super(IdentityV3RbacBaseTests, cls).skip_checks()
-        if not CONF.identity_feature_enabled.enforce_scope:
+        if not CONF.enforce_scope.keystone:
             raise cls.skipException("enforce_scope is not enabled for "
                                     "keystone, skipping RBAC tests")
 

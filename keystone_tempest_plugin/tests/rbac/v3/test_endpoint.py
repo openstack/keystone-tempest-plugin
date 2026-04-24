@@ -174,8 +174,9 @@ class SystemMemberTests(SystemAdminTests, base.BaseIdentityTest):
                         expected_status=exceptions.Forbidden,
                         endpoint_id=endpoint_id,
                         interface='internal')
-        # user gets a 404 for nonexistent endpoint
-        self.do_request('update_endpoint', expected_status=exceptions.NotFound,
+        # user also gets Forbidden for nonexistent endpoint
+        self.do_request('update_endpoint',
+                        expected_status=exceptions.Forbidden,
                         endpoint_id=data_utils.rand_uuid_hex(),
                         interface='internal')
 
@@ -185,8 +186,9 @@ class SystemMemberTests(SystemAdminTests, base.BaseIdentityTest):
         self.do_request('delete_endpoint',
                         expected_status=exceptions.Forbidden,
                         endpoint_id=endpoint_id)
-        # user gets a 404 for nonexistent endpoint
-        self.do_request('delete_endpoint', expected_status=exceptions.NotFound,
+        # user also gets Forbidden for nonexistent endpoint
+        self.do_request('delete_endpoint',
+                        expected_status=exceptions.Forbidden,
                         endpoint_id=data_utils.rand_uuid_hex())
 
 
@@ -207,8 +209,8 @@ class DomainAdminTests(SystemReaderTests, base.BaseIdentityTest):
             endpoint_id=endpoint_id)
         self.do_request('show_endpoint', expected_status=exceptions.Forbidden,
                         endpoint_id=endpoint_id)
-        # user gets a 404 for nonexistent endpoint
-        self.do_request('show_endpoint', expected_status=exceptions.NotFound,
+        # user also gets Forbidden for nonexistent endpoint
+        self.do_request('show_endpoint', expected_status=exceptions.Forbidden,
                         endpoint_id=data_utils.rand_uuid_hex())
 
     def test_identity_list_endpoints(self):

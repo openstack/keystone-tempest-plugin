@@ -125,7 +125,8 @@ class SystemAdminTests(IdentityV3RbacDomainTests, base.BaseIdentityTest):
                         description=data_utils.arbitrary_string())
         # user gets a 404 for nonexistent domain
         self.do_request('update_domain', expected_status=exceptions.NotFound,
-                        domain_id=data_utils.rand_uuid_hex())
+                        domain_id=data_utils.rand_uuid_hex(),
+                        description=data_utils.arbitrary_string())
 
     def test_identity_delete_domain(self):
         domain_id = self.admin_domains_client.create_domain(
@@ -156,7 +157,8 @@ class SystemMemberTests(SystemAdminTests, base.BaseIdentityTest):
                         description=data_utils.arbitrary_string())
         # user gets a 404 for nonexistent domain
         self.do_request('update_domain', expected_status=exceptions.NotFound,
-                        domain_id=data_utils.rand_uuid_hex())
+                        domain_id=data_utils.rand_uuid_hex(),
+                        description=data_utils.arbitrary_string())
 
     def test_identity_delete_domain(self):
         domain_id = self.admin_domains_client.create_domain(

@@ -1,7 +1,6 @@
 - job:
     name: keystone-protection-functional
     parent: keystone-tempest
-    voting: false
     vars:
       tempest_test_regex: 'keystone_tempest_plugin.tests.rbac'
       devstack_localrc:

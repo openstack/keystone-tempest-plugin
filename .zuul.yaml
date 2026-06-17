@@ -4,7 +4,7 @@
     vars:
       tempest_test_regex: 'keystone_tempest_plugin.tests.rbac'
       devstack_localrc:
-        KEYSTONE_ENFORCE_SCOPE: True
+        KEYSTONE_ENFORCE_NEW_DEFAULTS: True
       devstack_plugins:
         keystone: https://opendev.org/openstack/keystone
       devstack_services:

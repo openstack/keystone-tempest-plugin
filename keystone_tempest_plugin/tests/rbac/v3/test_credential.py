@@ -223,20 +223,24 @@ class SystemAdminTests(IdentityV3RbacCredentialTest, base.BaseIdentityTest):
     def test_identity_update_credential(self):
         # user can update their own credential, credential for user in own
         # domain, or credential for user in other domain
+        #
+        # NOTE: only `blob` may be updated in place -- `type`, `user_id`,
+        # and `project_id` are all immutable after creation, so the update
+        # request body below must not include them.
         user_id = self.persona.credentials.user_id
         for u in [user_id, self.test_user_1, self.test_user_2]:
             cred = self.credential(user_id=u)
             resp = self.client.create_credential(**cred)['credential']
             self.addCleanup(self.client.delete_credential, resp['id'])
-            cred['blob'] = data_utils.rand_uuid_hex()
             self.do_request(
-                'update_credential', credential_id=resp['id'], **cred)
+                'update_credential', credential_id=resp['id'],
+                blob=data_utils.rand_uuid_hex())
         # non-existent credential is Not Found
         self.do_request(
             'update_credential',
             expected_status=exceptions.NotFound,
             credential_id=data_utils.rand_uuid_hex(),
-            **self.credential(user_id=self.test_user_2))
+            blob=data_utils.rand_uuid_hex())
 
     def test_identity_delete_credential(self):
         # user can delete their own credential, credential for user in own
@@ -277,16 +281,19 @@ class SystemMemberTests(SystemAdminTests):
 
     def test_identity_update_credential(self):
         # user can update their own credential
+        #
+        # NOTE: only `blob` may be updated in place -- `type`, `user_id`,
+        # and `project_id` are all immutable after creation, so the update
+        # request body below must not include them.
         user_id = self.persona.credentials.user_id
         cred = self.credential(user_id=user_id)
         resp = self.admin_credentials_client.create_credential(
             **cred)['credential']
         self.addCleanup(
             self.admin_credentials_client.delete_credential, resp['id'])
-        cred['blob'] = data_utils.rand_uuid_hex()
         self.do_request(
             'update_credential',
-            credential_id=resp['id'], **cred)
+            credential_id=resp['id'], blob=data_utils.rand_uuid_hex())
         # user cannot update credential for other user
         for u in [self.test_user_1, self.test_user_2]:
             cred = self.credential(user_id=u)
@@ -294,17 +301,16 @@ class SystemMemberTests(SystemAdminTests):
                 **cred)['credential']
             self.addCleanup(
                 self.admin_credentials_client.delete_credential, resp['id'])
-            cred['blob'] = data_utils.rand_uuid_hex()
             self.do_request(
                 'update_credential',
                 expected_status=exceptions.Forbidden,
-                credential_id=resp['id'], **cred)
+                credential_id=resp['id'], blob=data_utils.rand_uuid_hex())
         # non-existent credential is Forbidden
         self.do_request(
             'update_credential',
             expected_status=exceptions.Forbidden,
             credential_id=data_utils.rand_uuid_hex(),
-            **self.credential(user_id=self.test_user_2))
+            blob=data_utils.rand_uuid_hex())
 
     def test_identity_delete_credential(self):
         # user can delete their own credential

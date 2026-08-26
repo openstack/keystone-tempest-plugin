@@ -4,7 +4,11 @@
     vars:
       tempest_test_regex: 'keystone_tempest_plugin.tests.rbac'
       devstack_localrc:
+        # Master keystone (993829) honors KEYSTONE_ENFORCE_NEW_DEFAULTS.
+        # Stable keystone still gates SRBAC + tempest.conf on KEYSTONE_ENFORCE_SCOPE.
+        # The job is branchless, so set both or protection tests skip on stables.
         KEYSTONE_ENFORCE_NEW_DEFAULTS: True
+        KEYSTONE_ENFORCE_SCOPE: True
       devstack_plugins:
         keystone: https://opendev.org/openstack/keystone
       devstack_services:

@@ -38,6 +38,12 @@
         post-config: {}
 
 - job:
+    name: keystone-tempest-2026-2
+    parent: keystone-tempest
+    nodeset: openstack-single-node-noble
+    override-checkout: stable/2026.2
+
+- job:
     name: keystone-tempest-2026-1
     parent: keystone-tempest
     nodeset: openstack-single-node-noble
@@ -65,6 +71,7 @@
         - keystone-tempest-federation:
             voting: false
         - keystone-tempest-federation-k2k
+        - keystone-tempest-2026-2
         - keystone-tempest-2026-1
         - keystone-tempest-2025-2
         - keystone-tempest-2025-1
